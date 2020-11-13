@@ -6,6 +6,7 @@
     <TargetFrameworks>net452;net5.0</TargetFrameworks>
     <LangVersion>latest</LangVersion>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <OutputType>Library</OutputType>
   </PropertyGroup>
 <ItemGroup>
@@ -17,5 +18,9 @@
   <ItemGroup Condition="'$(TargetFramework)'=='net452'">
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />
     <Reference Include="System.Net.Http" />
+    <PackageReference Include="System.Management.Automation_PowerShell_3.0" Version="6.3.9600.17400" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)'=='net5.0'">
+    <PackageReference Include="System.Management.Automation" Version="7.1.0" />
   </ItemGroup>
 </Project>
