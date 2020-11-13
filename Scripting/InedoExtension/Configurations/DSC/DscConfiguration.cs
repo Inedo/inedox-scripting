@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Threading.Tasks;
 using Inedo.Documentation;
 using Inedo.ExecutionEngine;
 using Inedo.ExecutionEngine.Variables;
@@ -11,12 +12,13 @@ using Inedo.Extensibility.Operations;
 using Inedo.Serialization;
 using Inedo.Web;
 
-namespace Inedo.Extensions.Windows.Configurations.DSC
+namespace Inedo.Extensions.Scripting.Configurations.DSC
 {
     [Serializable]
     [DisplayName("PowerShell Desired State")]
     [Description("A configuration that stores state collected by PowerShell DSC.")]
-#warning Add PErsistFrom
+#warning Alex verify PersistFrom from the Windows Extension
+    [PersistFrom("Inedo.Extensions.Windows.Configurations.DSC,InedoExtension")]
     public sealed class DscConfiguration : PersistedConfiguration
     {
         private Dictionary<string, RuntimeValue> dictionary;
@@ -175,12 +177,20 @@ namespace Inedo.Extensions.Windows.Configurations.DSC
 
             return d;
         }
-
+        [Obsolete("Use CompareAsync instead.")]
         public override ComparisonResult Compare(PersistedConfiguration other)
         {
             bool inDesiredState = this.InDesiredState && other is DscConfiguration dsc && dsc.InDesiredState;
 
             return inDesiredState ? ComparisonResult.Identical : new ComparisonResult(new[] { new Difference(nameof(InDesiredState), true, false) });
+        }
+
+        public override Task<ComparisonResult> CompareAsync(PersistedConfiguration other, IOperationCollectionContext context)
+        {
+            bool inDesiredState = this.InDesiredState && other is DscConfiguration dsc && dsc.InDesiredState;
+
+            return Task.FromResult(inDesiredState ? ComparisonResult.Identical : new ComparisonResult(new[] { new Difference(nameof(InDesiredState), true, false) }));
+            
         }
 
         internal Dictionary<string, RuntimeValue> ToPowerShellDictionary(Dictionary<string, RuntimeValueType> propertyTypes = null)

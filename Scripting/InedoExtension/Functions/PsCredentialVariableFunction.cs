@@ -8,7 +8,7 @@ using Inedo.Extensibility;
 using Inedo.Extensibility.Credentials;
 using Inedo.Extensibility.VariableFunctions;
 
-namespace Inedo.Extensions.Windows.Functions
+namespace Inedo.Extensions.Scripting.Functions
 {
     [ScriptAlias("PSCredential")]
     [Description("Returns a PSCredential object that can be passed to PowerShell scripts.")]

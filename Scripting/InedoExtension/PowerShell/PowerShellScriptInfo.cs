@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 
-namespace Inedo.Extensions.Windows.PowerShell
+namespace Inedo.Extensions.Scripting.PowerShell
 {
     /// <summary>
     /// Contains metadata about a script.

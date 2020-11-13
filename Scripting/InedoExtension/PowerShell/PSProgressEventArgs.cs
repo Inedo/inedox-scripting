@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Inedo.Extensions.Windows.PowerShell
+namespace Inedo.Extensions.Scripting.PowerShell
 {
     internal sealed class PSProgressEventArgs : EventArgs
     {

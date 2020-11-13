@@ -6,9 +6,9 @@ using Inedo.ExecutionEngine;
 using Inedo.Extensibility;
 using Inedo.Extensibility.Operations;
 using Inedo.Extensibility.VariableFunctions;
-using Inedo.Extensions.Windows.PowerShell;
+using Inedo.Extensions.Scripting.PowerShell;
 
-namespace Inedo.Extensions.Windows.Functions
+namespace Inedo.Extensions.Scripting.Functions
 {
     [ScriptAlias("PSEval")]
     [Description("Returns the result of a PowerShell script.")]

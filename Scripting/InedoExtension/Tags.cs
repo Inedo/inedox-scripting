@@ -1,4 +1,4 @@
-﻿namespace Inedo.Extensions.Windows
+﻿namespace Inedo.Extensions.Scripting
 {
     internal static class Tags
     {

@@ -5,10 +5,10 @@ using Inedo.Diagnostics;
 using Inedo.Documentation;
 using Inedo.Extensibility;
 using Inedo.Extensibility.Operations;
-using Inedo.Extensions.Windows.Configurations.DSC;
-using Inedo.Extensions.Windows.PowerShell;
+using Inedo.Extensions.Scripting.Configurations.DSC;
+using Inedo.Extensions.Scripting.PowerShell;
 
-namespace Inedo.Extensions.Windows.Operations.PowerShell
+namespace Inedo.Extensions.Scripting.Operations.PowerShell
 {
     [DisplayName("Collect DSC Modules")]
     [Description("Collects the names and versions of DSC modules installed on a server.")]

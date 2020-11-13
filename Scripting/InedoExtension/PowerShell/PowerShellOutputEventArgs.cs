@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Management.Automation;
 
-namespace Inedo.Extensions.Windows.PowerShell
+namespace Inedo.Extensions.Scripting.PowerShell
 {
     internal sealed class PowerShellOutputEventArgs : EventArgs
     {

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Management.Automation.Host;
 
-namespace Inedo.Extensions.Windows.PowerShell
+namespace Inedo.Extensions.Scripting.PowerShell
 {
     // this needs to be faked in order to get Write-Host to work on PS 4.0
     internal sealed class InedoPSHostRawUserInterface : PSHostRawUserInterface

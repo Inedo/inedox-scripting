@@ -12,7 +12,7 @@ using Inedo.ExecutionEngine;
 using Inedo.Extensibility.Operations;
 using Inedo.Extensibility.RaftRepositories;
 
-namespace Inedo.Extensions.Windows.PowerShell
+namespace Inedo.Extensions.Scripting.PowerShell
 {
     internal static class PSUtil
     {

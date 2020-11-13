@@ -2,7 +2,7 @@
 using System.Management.Automation;
 using Inedo.Diagnostics;
 
-namespace Inedo.Extensions.Windows.PowerShell
+namespace Inedo.Extensions.Scripting.PowerShell
 {
     internal static class PowerShellExtensions
     {

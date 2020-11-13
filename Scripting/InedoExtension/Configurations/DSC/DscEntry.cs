@@ -4,7 +4,7 @@ using System.Linq;
 using Inedo.ExecutionEngine;
 using Inedo.Serialization;
 
-namespace Inedo.Extensions.Windows.Configurations.DSC
+namespace Inedo.Extensions.Scripting.Configurations.DSC
 {
     /// <summary>
     /// Represents serializable arbitrary configuration that can be translated to
@@ -17,7 +17,8 @@ namespace Inedo.Extensions.Windows.Configurations.DSC
     /// </remarks>
     [Serializable]
     [SlimSerializable]
-#warning Add PersistedFrom
+#warning Alex verify PersistFrom from the Windows Extension
+    [PersistFrom("Inedo.Extensions.Windows.Configurations.DSC,InedoExtension")]
     public sealed class DscEntry
     {
         [Persistent]

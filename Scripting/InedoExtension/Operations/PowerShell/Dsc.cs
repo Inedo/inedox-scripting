@@ -8,10 +8,10 @@ using Inedo.Diagnostics;
 using Inedo.ExecutionEngine;
 using Inedo.Extensibility.Configurations;
 using Inedo.Extensibility.Operations;
-using Inedo.Extensions.Windows.Configurations.DSC;
-using Inedo.Extensions.Windows.PowerShell;
+using Inedo.Extensions.Scripting.Configurations.DSC;
+using Inedo.Extensions.Scripting.PowerShell;
 
-namespace Inedo.Extensions.Windows.Operations.PowerShell
+namespace Inedo.Extensions.Scripting.Operations.PowerShell
 {
     internal static class Dsc
     {

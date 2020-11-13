@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Inedo.Extensions.Windows.PowerShell
+namespace Inedo.Extensions.Scripting.PowerShell
 {
     /// <summary>
     /// Contains metadata about a script parameter.

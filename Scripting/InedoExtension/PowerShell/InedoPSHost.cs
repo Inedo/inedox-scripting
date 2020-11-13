@@ -3,7 +3,7 @@ using System.Globalization;
 using System.Management.Automation.Host;
 using Inedo.Diagnostics;
 
-namespace Inedo.Extensions.Windows.PowerShell
+namespace Inedo.Extensions.Scripting.PowerShell
 {
     internal sealed class InedoPSHost : PSHost, ILogger
     {

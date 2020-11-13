@@ -9,9 +9,9 @@ using Inedo.ExecutionEngine.Mapping;
 using Inedo.Extensibility;
 using Inedo.Extensibility.Configurations;
 using Inedo.Extensibility.Operations;
-using Inedo.Extensions.Windows.Configurations.DSC;
+using Inedo.Extensions.Scripting.Configurations.DSC;
 
-namespace Inedo.Extensions.Windows.Operations.PowerShell
+namespace Inedo.Extensions.Scripting.Operations.PowerShell
 {
     [DisplayName("PSDsc")]
     [Description("Ensures the configuration of a specified PowerShell DSC Resource.")]

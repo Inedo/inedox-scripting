@@ -9,10 +9,10 @@ using Inedo.ExecutionEngine;
 using Inedo.Extensibility;
 using Inedo.Extensibility.Configurations;
 using Inedo.Extensibility.Operations;
-using Inedo.Extensions.Windows.PowerShell;
+using Inedo.Extensions.Scripting.PowerShell;
 using Inedo.Web;
 
-namespace Inedo.Extensions.Windows.Operations.PowerShell
+namespace Inedo.Extensions.Scripting.Operations.PowerShell
 {
     [DisplayName("PSEnsure")]
     [Description("Uses two PowerShell scripts to Collect, and then Ensure a configuration about a server.")]

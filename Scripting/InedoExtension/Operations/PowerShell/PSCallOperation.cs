@@ -8,10 +8,10 @@ using Inedo.ExecutionEngine;
 using Inedo.ExecutionEngine.Mapping;
 using Inedo.Extensibility;
 using Inedo.Extensibility.Operations;
-using Inedo.Extensions.Windows.PowerShell;
+using Inedo.Extensions.Scripting.PowerShell;
 using Inedo.Web;
 
-namespace Inedo.Extensions.Windows.Operations.PowerShell
+namespace Inedo.Extensions.Scripting.Operations.PowerShell
 {
     [DisplayName("PSCall")]
     [Description("Calls a PowerShell Script that is stored as an asset.")]
@@ -19,7 +19,7 @@ namespace Inedo.Extensions.Windows.Operations.PowerShell
     [Tag("powershell")]
     [ScriptNamespace("PowerShell", PreferUnqualified = true)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-#warning fix this
+#warning Alex fix this when Operation Editor is added to the SDK
     //[CustomEditor(typeof(PSCallOperationEditor))]
     [Note("An argument may be explicitly converted to an integral type by prefixing the value with [type::<typeName>], where <typeName> is one of: int, uint, long, ulong, double, decimal. Normally this conversion is performed automatically and this is not necessary.")]
     [Example(@"

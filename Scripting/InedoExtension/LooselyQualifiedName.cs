@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
 
-namespace Inedo.Extensions.Windows
+namespace Inedo.Extensions.Scripting
 {
     /// <summary>
     /// Represents a name that may be qualified with a namespace with relaxed namespace restrictions.

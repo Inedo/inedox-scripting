@@ -6,10 +6,10 @@ using Inedo.Diagnostics;
 using Inedo.Documentation;
 using Inedo.Extensibility;
 using Inedo.Extensibility.Operations;
-using Inedo.Extensions.Windows.PowerShell;
+using Inedo.Extensions.Scripting.PowerShell;
 using Inedo.Web;
 
-namespace Inedo.Extensions.Windows.Operations
+namespace Inedo.Extensions.Scripting.Operations
 {
     [DisplayName("PSExec")]
     [Description("Executes a specified PowerShell script.")]

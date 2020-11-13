@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Inedo.Diagnostics;
 using Inedo.ExecutionEngine;
 
-namespace Inedo.Extensions.Windows.PowerShell
+namespace Inedo.Extensions.Scripting.PowerShell
 {
     internal interface IPowerShellRunner
     {

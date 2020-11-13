@@ -9,7 +9,7 @@ using Inedo.Diagnostics;
 using Inedo.ExecutionEngine;
 using Inedo.Serialization;
 
-namespace Inedo.Extensions.Windows.PowerShell
+namespace Inedo.Extensions.Scripting.PowerShell
 {
     internal sealed class CollectDscModulesJob : RemoteJob
     {

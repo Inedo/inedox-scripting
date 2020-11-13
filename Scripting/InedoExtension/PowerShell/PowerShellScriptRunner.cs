@@ -11,7 +11,7 @@ using Inedo.Diagnostics;
 using Inedo.ExecutionEngine;
 using Inedo.Extensibility.Operations;
 
-namespace Inedo.Extensions.Windows.PowerShell
+namespace Inedo.Extensions.Scripting.PowerShell
 {
     internal class PowerShellScriptRunner : ILogger, IDisposable
     {
