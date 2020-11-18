@@ -17,7 +17,6 @@ namespace Inedo.Extensions.Scripting.Configurations.DSC
     /// </remarks>
     [Serializable]
     [SlimSerializable]
-#warning Alex verify PersistFrom from the Windows Extension
     [PersistFrom("Inedo.Extensions.Windows.Configurations.DSC,InedoExtension")]
     public sealed class DscEntry
     {

@@ -17,7 +17,6 @@ namespace Inedo.Extensions.Scripting.Configurations.DSC
     [Serializable]
     [DisplayName("PowerShell Desired State")]
     [Description("A configuration that stores state collected by PowerShell DSC.")]
-#warning Alex verify PersistFrom from the Windows Extension
     [PersistFrom("Inedo.Extensions.Windows.Configurations.DSC,InedoExtension")]
     public sealed class DscConfiguration : PersistedConfiguration
     {
