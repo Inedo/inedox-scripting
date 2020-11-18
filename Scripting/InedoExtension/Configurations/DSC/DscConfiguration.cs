@@ -17,7 +17,7 @@ namespace Inedo.Extensions.Scripting.Configurations.DSC
     [Serializable]
     [DisplayName("PowerShell Desired State")]
     [Description("A configuration that stores state collected by PowerShell DSC.")]
-    [PersistFrom("Inedo.Extensions.Windows.Configurations.DSC,InedoExtension")]
+    [PersistFrom("Inedo.Extensions.Windows.Configurations.DSC,Windows")]
     public sealed class DscConfiguration : PersistedConfiguration
     {
         private Dictionary<string, RuntimeValue> dictionary;

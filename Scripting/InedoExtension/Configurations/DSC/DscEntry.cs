@@ -17,7 +17,7 @@ namespace Inedo.Extensions.Scripting.Configurations.DSC
     /// </remarks>
     [Serializable]
     [SlimSerializable]
-    [PersistFrom("Inedo.Extensions.Windows.Configurations.DSC,InedoExtension")]
+    [PersistFrom("Inedo.Extensions.Windows.Configurations.DSC,Windows")]
     public sealed class DscEntry
     {
         [Persistent]
