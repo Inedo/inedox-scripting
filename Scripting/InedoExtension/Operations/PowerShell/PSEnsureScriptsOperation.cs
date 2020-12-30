@@ -13,9 +13,9 @@ using Inedo.Web;
 
 namespace Inedo.Extensions.Scripting.Operations.PowerShell
 {
-    [DisplayName("PSEnsure")]
+    [DisplayName("PSEnsure using Scripts")]
     [Description("Uses two PowerShell scripts to Collect, and then Ensure a configuration about a server.")]
-    [ScriptAlias("PSEnsure")]
+    [ScriptAlias("PSEnsureScripts")]
     [Tag(Tags.PowerShell)]
     [ScriptNamespace(Namespaces.PowerShell, PreferUnqualified = true)]
     [Example(@"
@@ -50,7 +50,7 @@ PSEnsure(
 );
 ")]
     [Note("The Key is a unique string per server, and having multiple operations attempt to use the same key will yield in unpredictable behavior.")]
-    public sealed class PSEnsureOperation : EnsureOperation
+    public sealed class PSEnsureScriptsOperation : EnsureOperation
     {
         private PSProgressEventArgs currentProgress;
 
