@@ -13,9 +13,6 @@ namespace Inedo.Extensions.Scripting.PowerShell
 {
     internal sealed class ExecutePowerShellJob : RemoteJob
     {
-        private int currentPercent;
-        private string currentActivity = string.Empty;
-
         public event EventHandler<PSProgressEventArgs> ProgressUpdate;
 
         public string ScriptText { get; set; }
@@ -54,7 +51,7 @@ namespace Inedo.Extensions.Scripting.PowerShell
             WriteDictionary(writer, this.Parameters);
 
             SlimBinaryFormatter.WriteLength(writer, this.OutVariables?.Length ?? 0);
-            foreach (var var in this.OutVariables ?? new string[0])
+            foreach (var var in this.OutVariables ?? InedoLib.EmptyArray<string>())
                 writer.Write(var);
         }
         public override void Deserialize(Stream stream)
@@ -228,21 +225,7 @@ namespace Inedo.Extensions.Scripting.PowerShell
 
             return r;
         }
-        private void NotifyProgressUpdate(int percent, string activity)
-        {
-            if (percent != this.currentPercent || activity != this.currentActivity)
-            {
-                this.currentPercent = percent;
-                this.currentActivity = activity;
 
-                var buffer = new byte[InedoLib.UTF8Encoding.GetByteCount(activity) + 1];
-                buffer[0] = (byte)percent;
-                InedoLib.UTF8Encoding.GetBytes(activity, 0, activity.Length, buffer, 1);
-                this.Post(buffer);
-            }
-        }
-
-        [Serializable]
         public sealed class Result
         {
             public int? ExitCode { get; set; }
@@ -263,40 +246,38 @@ namespace Inedo.Extensions.Scripting.PowerShell
 
             public async Task<Result> ExecuteAsync(string script, Dictionary<string, RuntimeValue> variables, Dictionary<string, RuntimeValue> parameters, string[] outVariables, string workingDirectory, CancellationToken cancellationToken)
             {
-                using (var runner = new PowerShellScriptRunner { DebugLogging = this.DebugLogging, VerboseLogging = this.VerboseLogging })
+                using var runner = new PowerShellScriptRunner { DebugLogging = this.DebugLogging, VerboseLogging = this.VerboseLogging };
+                var outputData = new List<RuntimeValue>();
+
+                runner.MessageLogged += (s, e) => this.MessageLogged?.Invoke(this, e);
+                if (this.LogOutput)
+                    runner.OutputReceived += (s, e) => this.OutputReceived?.Invoke(this, e);
+
+                var outVariables2 = outVariables.ToDictionary(v => v, v => new RuntimeValue(string.Empty), StringComparer.OrdinalIgnoreCase);
+
+                if (this.CollectOutput)
                 {
-                    var outputData = new List<RuntimeValue>();
-
-                    runner.MessageLogged += (s, e) => this.MessageLogged?.Invoke(this, e);
-                    if (this.LogOutput)
-                        runner.OutputReceived += (s, e) => this.OutputReceived?.Invoke(this, e);
-
-                    var outVariables2 = outVariables.ToDictionary(v => v, v => new RuntimeValue(string.Empty), StringComparer.OrdinalIgnoreCase);
-
-                    if (this.CollectOutput)
-                    {
-                        runner.OutputReceived +=
-                            (s, e) =>
+                    runner.OutputReceived +=
+                        (s, e) =>
+                        {
+                            var output = PSUtil.ToRuntimeValue(e.Output);
+                            lock (outputData)
                             {
-                                var output = PSUtil.ToRuntimeValue(e.Output);
-                                lock (outputData)
-                                {
-                                    outputData.Add(output);
-                                }
-                            };
-                    }
-
-                    runner.ProgressUpdate += (s, e) => this.ProgressUpdate?.Invoke(this, e);
-
-                    int? exitCode = await runner.RunAsync(script, variables, parameters, outVariables2, workingDirectory, cancellationToken);
-
-                    return new Result
-                    {
-                        ExitCode = exitCode,
-                        Output = outputData,
-                        OutVariables = outVariables2
-                    };
+                                outputData.Add(output);
+                            }
+                        };
                 }
+
+                runner.ProgressUpdate += (s, e) => this.ProgressUpdate?.Invoke(this, e);
+
+                int? exitCode = await runner.RunAsync(script, variables, parameters, outVariables2, workingDirectory, cancellationToken);
+
+                return new Result
+                {
+                    ExitCode = exitCode,
+                    Output = outputData,
+                    OutVariables = outVariables2
+                };
             }
         }
     }

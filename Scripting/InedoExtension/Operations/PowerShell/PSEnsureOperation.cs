@@ -2,7 +2,6 @@
 using System.ComponentModel;
 using System.Threading;
 using System.Threading.Tasks;
-using Inedo.Agents;
 using Inedo.Diagnostics;
 using Inedo.Documentation;
 using Inedo.ExecutionEngine;
@@ -58,12 +57,10 @@ PSEnsure(
         [Required]
         [ScriptAlias("Key")]
         [DisplayName("Configuration key")]
-        //[Description(CommonDescriptions.Key)]
         public string ConfigurationKey { get; set; }
         [Required]
         [ScriptAlias("Value")]
         [DisplayName("Expected value")]
-        //[Description(CommonDescriptions.ExpectedValue)]
         public string ExpectedValue { get; set; }
         [ScriptAlias("Collect")]
         [DisplayName("Collection script")]
@@ -151,41 +148,16 @@ PSEnsure(
             if (!this.ValidateConfiguration())
                 return null;
 
-            ExecutePowerShellJob.Result result;
-
-            if (!string.IsNullOrWhiteSpace(this.CollectScriptAsset))
-            {
-                result = await PSUtil.ExecuteScriptAsync(
-                    logger: this,
-                    context: context,
-                    fullScriptName: this.CollectScriptAsset,
-                    arguments: this.CollectScriptParams ?? new Dictionary<string, RuntimeValue>(),
-                    outArguments: new Dictionary<string, RuntimeValue>(),
-                    collectOutput: !this.UseExitCode,
-                    progressUpdateHandler: (s, e) => Interlocked.Exchange(ref this.currentProgress, e)
-                );
-            }
-            else
-            {
-                var jobRunner = context.Agent.GetService<IRemoteJobExecuter>();
-
-                var job = new ExecutePowerShellJob
-                {
-                    ScriptText = this.CollectScript,
-                    DebugLogging = this.DebugLogging,
-                    VerboseLogging = this.VerboseLogging,
-                    CollectOutput = !this.UseExitCode,
-                    LogOutput = this.UseExitCode,
-                    Variables = PowerShellScriptRunner.ExtractVariables(this.CollectScript, context)
-                };
-
-                job.MessageLogged += (s, e) => this.Log(e.Level, e.Message);
-                job.ProgressUpdate += (s, e) => Interlocked.Exchange(ref this.currentProgress, e);
-
-                result = await jobRunner.ExecuteJobAsync(job, context.CancellationToken) as ExecutePowerShellJob.Result;
-            }
-
-            PSUtil.LogExit(this, result.ExitCode);
+            var result = await PSUtil.ExecuteScriptAsync(
+                logger: this,
+                context: context,
+                scriptNameOrContent: AH.CoalesceString(this.CollectScriptAsset, this.CollectScript),
+                scriptIsAsset: !string.IsNullOrWhiteSpace(this.CollectScriptAsset),
+                arguments: this.CollectScriptParams ?? new Dictionary<string, RuntimeValue>(),
+                outArguments: new Dictionary<string, RuntimeValue>(),
+                collectOutput: !this.UseExitCode,
+                progressUpdateHandler: (s, e) => Interlocked.Exchange(ref this.currentProgress, e)
+            );
 
             return new KeyValueConfiguration
             {
@@ -199,40 +171,16 @@ PSEnsure(
             if (!this.ValidateConfiguration())
                 return;
 
-            ExecutePowerShellJob.Result result;
-
-            if (!string.IsNullOrWhiteSpace(this.ConfigureScriptAsset))
-            {
-                result = await PSUtil.ExecuteScriptAsync(
-                    logger: this,
-                    context: context,
-                    fullScriptName: this.ConfigureScriptAsset,
-                    arguments: this.ConfigureScriptParams ?? new Dictionary<string, RuntimeValue>(),
-                    outArguments: new Dictionary<string, RuntimeValue>(),
-                    collectOutput: false,
-                    progressUpdateHandler: (s, e) => Interlocked.Exchange(ref this.currentProgress, e)
-                );
-            }
-            else
-            {
-                var jobRunner = context.Agent.GetService<IRemoteJobExecuter>();
-
-                var job = new ExecutePowerShellJob
-                {
-                    ScriptText = this.ConfigureScript,
-                    DebugLogging = this.DebugLogging,
-                    VerboseLogging = this.VerboseLogging,
-                    CollectOutput = false,
-                    LogOutput = true,
-                    Variables = PowerShellScriptRunner.ExtractVariables(this.ConfigureScript, context)
-                };
-
-                job.MessageLogged += (s, e) => this.Log(e.Level, e.Message);
-                job.ProgressUpdate += (s, e) => Interlocked.Exchange(ref this.currentProgress, e);
-
-                result = await jobRunner.ExecuteJobAsync(job, context.CancellationToken) as ExecutePowerShellJob.Result;
-                PSUtil.LogExit(this, result.ExitCode);
-            }
+            _ = await PSUtil.ExecuteScriptAsync(
+                logger: this,
+                context: context,
+                scriptNameOrContent: AH.CoalesceString(this.ConfigureScriptAsset, this.ConfigureScript),
+                scriptIsAsset: !string.IsNullOrWhiteSpace(this.ConfigureScriptAsset),
+                arguments: this.ConfigureScriptParams ?? new Dictionary<string, RuntimeValue>(),
+                outArguments: new Dictionary<string, RuntimeValue>(),
+                collectOutput: false,
+                progressUpdateHandler: (s, e) => Interlocked.Exchange(ref this.currentProgress, e)
+            );
         }
 
         public override PersistedConfiguration GetConfigurationTemplate()

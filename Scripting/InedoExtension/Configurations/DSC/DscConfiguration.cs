@@ -228,30 +228,24 @@ namespace Inedo.Extensions.Scripting.Configurations.DSC
 
         private static DscEntry CreateEntry(string key, RuntimeValue value)
         {
-            switch (value.ValueType)
+            return value.ValueType switch
             {
-                default:
-                case RuntimeValueType.Scalar:
-                    return new DscEntry
-                    {
-                        Key = key,
-                        Text = value.AsString() ?? string.Empty
-                    };
-
-                case RuntimeValueType.Vector:
-                    return new DscEntry
-                    {
-                        Key = key,
-                        List = value.AsEnumerable().Select(e => CreateEntry(null, e)).ToList()
-                    };
-
-                case RuntimeValueType.Map:
-                    return new DscEntry
-                    {
-                        Key = key,
-                        Map = value.AsDictionary().Select(e => CreateEntry(e.Key, e.Value)).ToList()
-                    };
-            }
+                RuntimeValueType.Vector => new DscEntry
+                {
+                    Key = key,
+                    List = value.AsEnumerable().Select(e => CreateEntry(null, e)).ToList()
+                },
+                RuntimeValueType.Map => new DscEntry
+                {
+                    Key = key,
+                    Map = value.AsDictionary().Select(e => CreateEntry(e.Key, e.Value)).ToList()
+                },
+                _ => new DscEntry
+                {
+                    Key = key,
+                    Text = value.AsString() ?? string.Empty
+                },
+            };
         }
     }
 }

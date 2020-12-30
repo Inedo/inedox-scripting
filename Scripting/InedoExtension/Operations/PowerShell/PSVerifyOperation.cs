@@ -101,41 +101,16 @@ namespace Inedo.Extensions.Scripting.Operations.PowerShell
             if (!this.ValidateConfiguration())
                 return null;
 
-            ExecutePowerShellJob.Result result;
-
-            if (!string.IsNullOrWhiteSpace(this.CollectScriptAsset))
-            {
-                result = await PSUtil.ExecuteScriptAsync(
-                    logger: this,
-                    context: context,
-                    fullScriptName: this.CollectScriptAsset,
-                    arguments: this.CollectScriptParams ?? new Dictionary<string, RuntimeValue>(),
-                    outArguments: new Dictionary<string, RuntimeValue>(),
-                    collectOutput: !this.UseExitCode,
-                    progressUpdateHandler: (s, e) => Interlocked.Exchange(ref this.currentProgress, e)
-                );
-            }
-            else
-            {
-                var jobRunner = context.Agent.GetService<IRemoteJobExecuter>();
-
-                var job = new ExecutePowerShellJob
-                {
-                    ScriptText = this.CollectScript,
-                    DebugLogging = this.DebugLogging,
-                    VerboseLogging = this.VerboseLogging,
-                    CollectOutput = !this.UseExitCode,
-                    LogOutput = this.UseExitCode,
-                    Variables = PowerShellScriptRunner.ExtractVariables(this.CollectScript, context)
-                };
-
-                job.MessageLogged += (s, e) => this.Log(e.Level, e.Message);
-                job.ProgressUpdate += (s, e) => Interlocked.Exchange(ref this.currentProgress, e);
-
-                result = await jobRunner.ExecuteJobAsync(job, context.CancellationToken) as ExecutePowerShellJob.Result;
-            }
-
-            PSUtil.LogExit(this, result.ExitCode);
+            var result = await PSUtil.ExecuteScriptAsync(
+                logger: this,
+                context: context,
+                scriptNameOrContent: AH.CoalesceString(this.CollectScriptAsset, this.CollectScript),
+                scriptIsAsset: !string.IsNullOrWhiteSpace(this.CollectScriptAsset),
+                arguments: this.CollectScriptParams ?? new Dictionary<string, RuntimeValue>(),
+                outArguments: new Dictionary<string, RuntimeValue>(),
+                collectOutput: !this.UseExitCode,
+                progressUpdateHandler: (s, e) => Interlocked.Exchange(ref this.currentProgress, e)
+            );
 
             return new KeyValueConfiguration
             {

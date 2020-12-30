@@ -56,7 +56,7 @@ namespace Inedo.Extensions.Scripting.PowerShell
                 };
             }
 
-            ModuleInfo parseModuleInfo(RuntimeValue value)
+            static ModuleInfo parseModuleInfo(RuntimeValue value)
             {
                 var d = value.AsDictionary();
                 if (d == null)

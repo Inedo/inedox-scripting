@@ -52,7 +52,7 @@ pscall hdars (
                 return Complete;
             }
 
-            return PSUtil.ExecuteScriptAsync(
+            return PSUtil.ExecuteScriptAssetAsync(
                 logger: this,
                 context: context,
                 fullScriptName: fullScriptName,

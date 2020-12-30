@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Management.Automation;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using Inedo.Extensibility.RaftRepositories;
 
 namespace Inedo.Extensions.Scripting.PowerShell
@@ -34,9 +32,7 @@ namespace Inedo.Extensions.Scripting.PowerShell
             if (scriptText == null)
                 throw new ArgumentNullException(nameof(scriptText));
 
-            Collection<PSParseError> errors;
-
-            var tokens = PSParser.Tokenize(scriptText.ReadToEnd(), out errors);
+            var tokens = PSParser.Tokenize(scriptText.ReadToEnd(), out var errors);
 
             int paramIndex = tokens
                 .TakeWhile(t => t.Type != PSTokenType.Keyword || !string.Equals(t.Content, "param", StringComparison.OrdinalIgnoreCase))
@@ -71,9 +67,13 @@ namespace Inedo.Extensions.Scripting.PowerShell
                         d => new { d.Arg, d.Value },
                         StringComparer.OrdinalIgnoreCase);
 
-                return new PowerShellScriptInfo(
-                    description: docBlocks["SYNOPSIS"].Concat(docBlocks["DESCRIPTION"]).Select(d => d.Value).FirstOrDefault(),
-                    parameters: parameters.GroupJoin(
+                return new PowerShellScriptInfo
+                {
+                    ConfigKeyVariableName = docBlocks["AHCONFIGKEY"].FirstOrDefault()?.Value,
+                    ConfigValueVariableName = docBlocks["AHCONFIGVALUE"].FirstOrDefault()?.Value,
+                    ExecutionModeVariableName = docBlocks["AHEXECMODE"].FirstOrDefault()?.Value,
+                    Description = docBlocks["SYNOPSIS"].Concat(docBlocks["DESCRIPTION"]).Select(d => d.Value).FirstOrDefault(),
+                    Parameters = Array.AsReadOnly(parameters.GroupJoin(
                         docBlocks["PARAMETER"],
                         p => p.Name,
                         d => d.Arg,
@@ -84,18 +84,19 @@ namespace Inedo.Extensions.Scripting.PowerShell
                             isBooleanOrSwitch: p.IsBooleanOrSwitch,
                             isOutput: p.IsOutput
                         ),
-                        StringComparer.OrdinalIgnoreCase)
-                );
+                        StringComparer.OrdinalIgnoreCase).ToArray())
+                };
             }
 
-            return new PowerShellScriptInfo(
-                parameters: parameters.Select(p => new PowerShellParameterInfo(
+            return new PowerShellScriptInfo
+            {
+                Parameters = Array.AsReadOnly(parameters.Select(p => new PowerShellParameterInfo(
                     name: p.Name,
                     defaultValue: p.DefaultValue,
                     isBooleanOrSwitch: p.IsBooleanOrSwitch,
                     isOutput: p.IsOutput
-                ))
-            );
+                )).ToArray())
+            };
         }
 
         public static PowerShellScriptInfo TryLoad(LooselyQualifiedName scriptName)
@@ -108,11 +109,9 @@ namespace Inedo.Extensions.Scripting.PowerShell
             if (item == null)
                 return null;
 
-            using (var reader = new StringReader(item.Content))
-            {
-                TryParse(reader, out var info);
-                return info;
-            }
+            using var reader = new StringReader(item.Content);
+            _ = TryParse(reader, out var info);
+            return info;
         }
 
         private static IEnumerable<ParamInfo> ScrapeParameters(IEnumerable<PSToken> tokens)

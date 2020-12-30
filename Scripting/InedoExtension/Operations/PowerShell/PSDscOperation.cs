@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Inedo.Documentation;
 using Inedo.ExecutionEngine;
@@ -51,7 +50,6 @@ PSDsc cHdarsResource::cHdars (
         public const string ConfigurationKeyPropertyName = "Otter_ConfigurationKey";
 
         private readonly Lazy<DscConfiguration> lazyTemplate;
-        private static readonly LazyRegex IsArrayPropertyRegex = new LazyRegex(@"^\[[^\[\]]+\[\]\]$", RegexOptions.Compiled);
 
         public PSDscOperation() => this.lazyTemplate = new Lazy<DscConfiguration>(this.CreateTemplate);
 

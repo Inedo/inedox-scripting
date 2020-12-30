@@ -44,13 +44,11 @@ namespace Inedo.Extensions.Scripting.Operations.Shell
 
         public override async Task ExecuteAsync(IOperationExecutionContext context)
         {
-            using (var scriptReader = SHUtil.OpenScriptAsset(this.ScriptName, this, context))
-            {
-                if (scriptReader == null)
-                    return;
+            using var scriptReader = SHUtil.OpenScriptAsset(this.ScriptName, this, context);
+            if (scriptReader == null)
+                return;
 
-                this.ExitCode = await SHUtil.ExecuteScriptAsync(context, scriptReader, this.Arguments, this, this.Verbose, this.OutputLevel, this.ErrorLevel).ConfigureAwait(false);
-            }
+            this.ExitCode = await SHUtil.ExecuteScriptAsync(context, scriptReader, this.Arguments, this, this.Verbose, this.OutputLevel, this.ErrorLevel).ConfigureAwait(false);
         }
 
         protected override ExtendedRichDescription GetDescription(IOperationConfiguration config)

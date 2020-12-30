@@ -16,10 +16,23 @@ namespace Inedo.Extensions.Scripting.PowerShell
 {
     internal static class PSUtil
     {
-        public static async Task<ExecutePowerShellJob.Result> ExecuteScriptAsync(ILogSink logger, IOperationExecutionContext context, string fullScriptName, IReadOnlyDictionary<string, RuntimeValue> arguments, IDictionary<string, RuntimeValue> outArguments, bool collectOutput, EventHandler<PSProgressEventArgs> progressUpdateHandler, string successExitCode = null)
+        public static Task<ExecuteScriptResult> ExecuteScriptAsync(ILogSink logger, IOperationExecutionContext context, string scriptNameOrContent, bool scriptIsAsset, IReadOnlyDictionary<string, RuntimeValue> arguments, IDictionary<string, RuntimeValue> outArguments, bool collectOutput, EventHandler<PSProgressEventArgs> progressUpdateHandler, string successExitCode = null, bool useAhDirectives = false, string executionMode = "Configure")
+        {
+            if (scriptIsAsset)
+                return ExecuteScriptAssetAsync(logger, context, scriptNameOrContent, arguments, outArguments, collectOutput, progressUpdateHandler, successExitCode, useAhDirectives, executionMode);
+            else
+                return ExecuteScriptDirectAsync(logger, context, scriptNameOrContent, arguments, outArguments, collectOutput, progressUpdateHandler, successExitCode, useAhDirectives, executionMode);
+        }
+        public static Task<ExecuteScriptResult> ExecuteScriptAssetAsync(ILogSink logger, IOperationExecutionContext context, string fullScriptName, IReadOnlyDictionary<string, RuntimeValue> arguments, IDictionary<string, RuntimeValue> outArguments, bool collectOutput, EventHandler<PSProgressEventArgs> progressUpdateHandler, string successExitCode = null, bool useAhDirectives = false, string executionMode = "Configure")
         {
             var scriptText = GetScriptText(logger, fullScriptName, context);
+            if (scriptText == null)
+                return Task.FromResult<ExecuteScriptResult>(null);
 
+            return ExecuteScriptDirectAsync(logger, context, scriptText, arguments, outArguments, collectOutput, progressUpdateHandler, successExitCode, useAhDirectives, executionMode);
+        }
+        public static async Task<ExecuteScriptResult> ExecuteScriptDirectAsync(ILogSink logger, IOperationExecutionContext context, string scriptText, IReadOnlyDictionary<string, RuntimeValue> arguments, IDictionary<string, RuntimeValue> outArguments, bool collectOutput, EventHandler<PSProgressEventArgs> progressUpdateHandler, string successExitCode = null, bool useAhDirectives = false, string executionMode = "Configure")
+        {
             var variables = new Dictionary<string, RuntimeValue>();
             var parameters = new Dictionary<string, RuntimeValue>();
 
@@ -35,6 +48,18 @@ namespace Inedo.Extensions.Scripting.PowerShell
                         parameters[param.Name] = value;
                     else
                         variables[var.Key] = value;
+                }
+
+                if (useAhDirectives)
+                {
+                    if (!string.IsNullOrWhiteSpace(scriptInfo.ConfigKeyVariableName))
+                        outArguments[scriptInfo.ConfigKeyVariableName.TrimStart('$')] = string.Empty;
+
+                    if (!string.IsNullOrWhiteSpace(scriptInfo.ConfigValueVariableName))
+                        outArguments[scriptInfo.ConfigValueVariableName.TrimStart('$')] = string.Empty;
+
+                    if (!string.IsNullOrWhiteSpace(scriptInfo.ExecutionModeVariableName))
+                        variables[scriptInfo.ExecutionModeVariableName.TrimStart('$')] = executionMode;
                 }
             }
             else
@@ -67,7 +92,29 @@ namespace Inedo.Extensions.Scripting.PowerShell
             foreach (var var in result.OutVariables)
                 outArguments[var.Key] = var.Value;
 
-            return result;
+            var data = new ExecuteScriptResult
+            {
+                ExitCode = result.ExitCode,
+                Output = result.Output,
+                OutVariables = result.OutVariables
+            };
+
+            if (useAhDirectives && scriptInfo != null)
+            {
+                if (!string.IsNullOrWhiteSpace(scriptInfo.ConfigKeyVariableName) && result.OutVariables.TryGetValue(scriptInfo.ConfigKeyVariableName, out var configKey))
+                {
+                    data.ConfigKey = configKey.AsString();
+                    result.OutVariables.Remove(scriptInfo.ConfigKeyVariableName);
+                }
+
+                if (!string.IsNullOrWhiteSpace(scriptInfo.ConfigValueVariableName) && result.OutVariables.TryGetValue(scriptInfo.ConfigValueVariableName, out var configValue))
+                {
+                    data.ConfigValue = configValue;
+                    result.OutVariables.Remove(scriptInfo.ConfigValueVariableName);
+                }
+            }
+
+            return data;
         }
 
         public static RuntimeValue ToRuntimeValue(object value)
@@ -172,29 +219,16 @@ namespace Inedo.Extensions.Scripting.PowerShell
 
             public bool Evaluate(int exitCode)
             {
-                switch (this.Operator)
+                return this.Operator switch
                 {
-                    case "=":
-                    case "==":
-                        return exitCode == this.Value;
-
-                    case "!=":
-                        return exitCode != this.Value;
-
-                    case "<":
-                        return exitCode < this.Value;
-
-                    case ">":
-                        return exitCode > this.Value;
-
-                    case "<=":
-                        return exitCode <= this.Value;
-
-                    case ">=":
-                        return exitCode >= this.Value;
-                }
-
-                return false;
+                    "=" or "==" => exitCode == this.Value,
+                    "!=" => exitCode != this.Value,
+                    "<" => exitCode < this.Value,
+                    ">" => exitCode > this.Value,
+                    "<=" => exitCode <= this.Value,
+                    ">=" => exitCode >= this.Value,
+                    _ => false
+                };
             }
         }
     }
