@@ -1,65 +1,99 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel;
-using System.Threading;
 using System.Threading.Tasks;
 using Inedo.Diagnostics;
 using Inedo.Documentation;
 using Inedo.ExecutionEngine;
 using Inedo.ExecutionEngine.Mapping;
 using Inedo.Extensibility;
+using Inedo.Extensibility.Configurations;
 using Inedo.Extensibility.Operations;
 using Inedo.Extensions.Scripting.PowerShell;
 using Inedo.Web.Editors.Operations;
 
 namespace Inedo.Extensions.Scripting.Operations.PowerShell
 {
-    [DisplayName("PSCall")]
-    [Description("Calls a PowerShell Script that is stored as an asset.")]
-    [ScriptAlias("PSCall")]
+    [DisplayName("PSEnsure")]
+    [Description("Calls a PowerShell Ensure Script that is stored as an asset.")]
+    [ScriptAlias("PSEnsure")]
     [Tag("powershell")]
     [ScriptNamespace("PowerShell", PreferUnqualified = true)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     [UsesCallScriptEditor(typeof(PowerShellScriptInfoProvider))]
-    [Note("An argument may be explicitly converted to an integral type by prefixing the value with [type::<typeName>], where <typeName> is one of: int, uint, long, ulong, double, decimal. Normally this conversion is performed automatically and this is not necessary.")]
     [Example(@"
-# execute the hdars.ps1 script, passing Argument1 and Aaaaaarg2 as variables, and capturing the value of OutputArg as $MyVariable
-pscall hdars (
+# execute the hdars.ps1 ensure script, passing Argument1 and Aaaaaarg2 as variables, and capturing the value of OutputArg as $MyVariable
+PSEnsure hdars (
   Argument1: hello,
   Aaaaaarg2: World,
   OutputArg => $MyVariable
 );
 ")]
-    public sealed class PSCallOperation : ExecuteOperation, ICustomArgumentMapper
+    public sealed class PSEnsureOperation : EnsureOperation, ICustomArgumentMapper
     {
-        private PSProgressEventArgs currentProgress;
+        private volatile PSProgressEventArgs currentProgress;
 
         public RuntimeValue DefaultArgument { get; set; }
         public IReadOnlyDictionary<string, RuntimeValue> NamedArguments { get; set; }
         public IDictionary<string, RuntimeValue> OutArguments { get; set; }
 
-        public override Task ExecuteAsync(IOperationExecutionContext context)
+        public override async Task<PersistedConfiguration> CollectAsync(IOperationCollectionContext context)
         {
+            var scriptName = this.DefaultArgument.AsString();
+            if (string.IsNullOrWhiteSpace(scriptName))
+            {
+                this.LogError("Bad or missing script name.");
+                return null;
+            }
+
             if (context.Simulation)
             {
                 this.LogInformation("Executing PowerShell Script...");
-                return Complete;
+                return null;
             }
 
-            var fullScriptName = this.DefaultArgument.AsString();
-            if (fullScriptName == null)
-            {
-                this.LogError("Bad or missing script name.");
-                return Complete;
-            }
-
-            return PSUtil.ExecuteScriptAssetAsync(
+            var result = await PSUtil.ExecuteScriptAssetAsync(
                 logger: this,
                 context: context,
-                fullScriptName: fullScriptName,
+                fullScriptName: scriptName,
                 arguments: this.NamedArguments,
                 outArguments: this.OutArguments,
                 collectOutput: false,
-                progressUpdateHandler: (s, e) => Interlocked.Exchange(ref this.currentProgress, e)
+                useAhDirectives: true,
+                progressUpdateHandler: (s, e) => this.currentProgress = e,
+                executionMode: "Collect"
+            );
+
+            return new KeyValueConfiguration
+            {
+                Key = result.ConfigKey,
+                Value = result.ConfigValue.ToString()
+            };
+        }
+        public override async Task ConfigureAsync(IOperationExecutionContext context)
+        {
+            var scriptName = this.DefaultArgument.AsString();
+            if (string.IsNullOrWhiteSpace(scriptName))
+            {
+                this.LogError("Bad or missing script name.");
+                return;
+            }
+
+            if (context.Simulation)
+            {
+                this.LogInformation("Executing PowerShell Script...");
+                return;
+            }
+
+            _ = await PSUtil.ExecuteScriptAssetAsync(
+                logger: this,
+                context: context,
+                fullScriptName: scriptName,
+                arguments: this.NamedArguments,
+                outArguments: this.OutArguments,
+                collectOutput: false,
+                useAhDirectives: true,
+                progressUpdateHandler: (s, e) => this.currentProgress = e,
+                executionMode: "Configure"
             );
         }
         public override OperationProgress GetProgress()
@@ -71,7 +105,7 @@ pscall hdars (
         protected override ExtendedRichDescription GetDescription(IOperationConfiguration config)
         {
             if (string.IsNullOrWhiteSpace(config.DefaultArgument))
-                return new ExtendedRichDescription(new RichDescription("PSCall {error parsing statement}"));
+                return new ExtendedRichDescription(new RichDescription("PSEnsure {error parsing statement}"));
 
             var defaultArg = config.DefaultArgument;
             var longDesc = new RichDescription();
@@ -108,7 +142,7 @@ pscall hdars (
                 longDesc.AppendContent("with no parameters");
 
             return new ExtendedRichDescription(
-                new RichDescription("PSCall ", new Hilite(defaultArg)),
+                new RichDescription("PSEnsure ", new Hilite(defaultArg)),
                 longDesc
             );
         }

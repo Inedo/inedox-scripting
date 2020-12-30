@@ -4,7 +4,7 @@ using Inedo.Web.Editors.Operations;
 
 namespace Inedo.Extensions.Scripting.Operations.PowerShell
 {
-    internal sealed class PSCallScriptInfoProvider : ICallScriptInfoProvider
+    internal sealed class PowerShellScriptInfoProvider : ICallScriptInfoProvider
     {
         public CallScriptInfo TryLoad(string name)
         {
@@ -14,7 +14,7 @@ namespace Inedo.Extensions.Scripting.Operations.PowerShell
                 return null;
 
             return new CallScriptInfo(
-                scriptName.ToString(), 
+                scriptName.ToString(),
                 info.Parameters.Select(p => new CallScriptArgument
                 {
                     DefaultValue = p.DefaultValue,
@@ -22,7 +22,8 @@ namespace Inedo.Extensions.Scripting.Operations.PowerShell
                     IsBooleanOrSwitch = p.IsBooleanOrSwitch,
                     IsOutput = p.IsOutput,
                     Name = p.Name
-                }));
+                })
+            );
         }
     }
 }
