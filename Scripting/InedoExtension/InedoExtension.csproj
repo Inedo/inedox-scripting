@@ -21,7 +21,8 @@
     <PackageReference Include="System.Management.Automation_PowerShell_3.0" Version="6.3.9600.17400" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)'=='net5.0'">
-    <PackageReference Include="System.Management.Automation" Version="7.1.0" />
+    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.1.0" PrivateAssets="all" />
+    <PackageReference Include="System.Management.Automation" Version="7.1.0" PrivateAssets="all" />
   </ItemGroup>
   <Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="'$(TargetFramework)'=='net452'">
     <Exec Command="powershell -Command &quot;if ((Test-Path C:\LocalDev\Tools\inedoxpack\inedoxpack.exe) -And (Test-Path C:\LocalDev\Otter\Extensions -PathType Container)) { C:\LocalDev\Tools\inedoxpack\inedoxpack.exe '$(TargetDir)..\$(TargetFileName)' 'C:\LocalDev\Otter\Extensions\$(TargetName).upack' 0.0.0 }&quot;" />
