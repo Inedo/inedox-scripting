@@ -20,18 +20,22 @@ namespace Inedo.Extensions.Scripting.PowerShell
 
         public override Dictionary<string, PSObject> Prompt(string caption, string message, Collection<FieldDescription> descriptions)
         {
+            this.LogWarning($"Prompt Not Supported: {caption}\n{message}");
             throw new NotImplementedException();
         }
         public override int PromptForChoice(string caption, string message, Collection<ChoiceDescription> choices, int defaultChoice)
         {
+            this.LogWarning($"Prompt For Choice Not Supported: {caption}\n{message}");
             throw new NotImplementedException();
         }
         public override PSCredential PromptForCredential(string caption, string message, string userName, string targetName)
         {
+            this.LogWarning($"Prompt For Credential Not Supported: {caption}\n{message}");
             throw new NotImplementedException();
         }
         public override PSCredential PromptForCredential(string caption, string message, string userName, string targetName, PSCredentialTypes allowedCredentialTypes, PSCredentialUIOptions options)
         {
+            this.LogWarning($"Prompt For Credential Not Supported: {caption}\n{message}");
             throw new NotImplementedException();
         }
         public override string ReadLine()

@@ -188,6 +188,13 @@ namespace Inedo.Extensions.Scripting.PowerShell
             }
         }
 
+        public static IEnumerable<RuntimeValue> ParseDictionary(this RuntimeValue val)
+        {
+            if ((val.AsDictionary()?.Keys.Count ?? 0) <= 0)
+                return null;
+            return new List<RuntimeValue> { val };
+        }
+
         private sealed class ExitCodeComparator
         {
             private static readonly string[] ValidOperators = new[] { "=", "==", "!=", "<", ">", "<=", ">=" };
