@@ -35,6 +35,8 @@ PSEnsure hdars (
         public RuntimeValue DefaultArgument { get; set; }
         public IReadOnlyDictionary<string, RuntimeValue> NamedArguments { get; set; }
         public IDictionary<string, RuntimeValue> OutArguments { get; set; }
+        
+        private PSPersistedConfiguration collectedConfiguration;
 
         public override async Task<PersistedConfiguration> CollectAsync(IOperationCollectionContext context)
         {
@@ -58,17 +60,17 @@ PSEnsure hdars (
                 arguments: this.NamedArguments,
                 outArguments: this.OutArguments,
                 collectOutput: false,
-                useAhDirectives: true,
                 progressUpdateHandler: (s, e) => this.currentProgress = e,
-                executionMode: "Collect"
+                executionMode: PsExecutionMode.Collect
             );
 
-            return new KeyValueConfiguration
-            {
-                Key = result.ConfigKey,
-                Value = result.ConfigValue.ToString()
-            };
+            this.collectedConfiguration = new PSPersistedConfiguration(result);
+            return this.collectedConfiguration;
         }
+        public override PersistedConfiguration GetConfigurationTemplate() => this.collectedConfiguration;
+        public override Task StoreConfigurationStatusAsync(PersistedConfiguration actual, ComparisonResult results, ConfigurationPersistenceContext context)
+            => this.collectedConfiguration.StoreConfigurationStatusAsync(context);
+
         public override async Task ConfigureAsync(IOperationExecutionContext context)
         {
             var scriptName = this.DefaultArgument.AsString();
@@ -90,10 +92,9 @@ PSEnsure hdars (
                 fullScriptName: scriptName,
                 arguments: this.NamedArguments,
                 outArguments: this.OutArguments,
-                collectOutput: false,
-                useAhDirectives: true,
+                collectOutput: true,
                 progressUpdateHandler: (s, e) => this.currentProgress = e,
-                executionMode: "Configure"
+                executionMode: PsExecutionMode.Configure
             );
         }
         public override OperationProgress GetProgress()

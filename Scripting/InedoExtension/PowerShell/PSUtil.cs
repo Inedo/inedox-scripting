@@ -16,22 +16,22 @@ namespace Inedo.Extensions.Scripting.PowerShell
 {
     internal static class PSUtil
     {
-        public static Task<ExecuteScriptResult> ExecuteScriptAsync(ILogSink logger, IOperationExecutionContext context, string scriptNameOrContent, bool scriptIsAsset, IReadOnlyDictionary<string, RuntimeValue> arguments, IDictionary<string, RuntimeValue> outArguments, bool collectOutput, EventHandler<PSProgressEventArgs> progressUpdateHandler, string successExitCode = null, bool useAhDirectives = false, string executionMode = "Configure")
+        public static Task<ExecuteScriptResult> ExecuteScriptAsync(ILogSink logger, IOperationExecutionContext context, string scriptNameOrContent, bool scriptIsAsset, IReadOnlyDictionary<string, RuntimeValue> arguments, IDictionary<string, RuntimeValue> outArguments, bool collectOutput, EventHandler<PSProgressEventArgs> progressUpdateHandler, string successExitCode = null)
         {
             if (scriptIsAsset)
-                return ExecuteScriptAssetAsync(logger, context, scriptNameOrContent, arguments, outArguments, collectOutput, progressUpdateHandler, successExitCode, useAhDirectives, executionMode);
+                return ExecuteScriptAssetAsync(logger, context, scriptNameOrContent, arguments, outArguments, collectOutput, progressUpdateHandler, successExitCode);
             else
-                return ExecuteScriptDirectAsync(logger, context, scriptNameOrContent, arguments, outArguments, collectOutput, progressUpdateHandler, successExitCode, useAhDirectives, executionMode);
+                return ExecuteScriptDirectAsync(logger, context, scriptNameOrContent, arguments, outArguments, collectOutput, progressUpdateHandler, successExitCode);
         }
-        public static Task<ExecuteScriptResult> ExecuteScriptAssetAsync(ILogSink logger, IOperationExecutionContext context, string fullScriptName, IReadOnlyDictionary<string, RuntimeValue> arguments, IDictionary<string, RuntimeValue> outArguments, bool collectOutput, EventHandler<PSProgressEventArgs> progressUpdateHandler, string successExitCode = null, bool useAhDirectives = false, string executionMode = "Configure")
+        public static Task<ExecuteScriptResult> ExecuteScriptAssetAsync(ILogSink logger, IOperationExecutionContext context, string fullScriptName, IReadOnlyDictionary<string, RuntimeValue> arguments, IDictionary<string, RuntimeValue> outArguments, bool collectOutput, EventHandler<PSProgressEventArgs> progressUpdateHandler, string successExitCode = null, PsExecutionMode executionMode = PsExecutionMode.Normal)
         {
             var scriptText = GetScriptText(logger, fullScriptName, context);
             if (scriptText == null)
                 return Task.FromResult<ExecuteScriptResult>(null);
 
-            return ExecuteScriptDirectAsync(logger, context, scriptText, arguments, outArguments, collectOutput, progressUpdateHandler, successExitCode, useAhDirectives, executionMode);
+            return ExecuteScriptDirectAsync(logger, context, scriptText, arguments, outArguments, collectOutput, progressUpdateHandler, successExitCode, executionMode, fullScriptName);
         }
-        public static async Task<ExecuteScriptResult> ExecuteScriptDirectAsync(ILogSink logger, IOperationExecutionContext context, string scriptText, IReadOnlyDictionary<string, RuntimeValue> arguments, IDictionary<string, RuntimeValue> outArguments, bool collectOutput, EventHandler<PSProgressEventArgs> progressUpdateHandler, string successExitCode = null, bool useAhDirectives = false, string executionMode = "Configure")
+        public static async Task<ExecuteScriptResult> ExecuteScriptDirectAsync(ILogSink logger, IOperationExecutionContext context, string scriptText, IReadOnlyDictionary<string, RuntimeValue> arguments, IDictionary<string, RuntimeValue> outArguments, bool collectOutput, EventHandler<PSProgressEventArgs> progressUpdateHandler, string successExitCode = null, PsExecutionMode executionMode = PsExecutionMode.Normal, string fullScriptName = null)
         {
             var variables = new Dictionary<string, RuntimeValue>();
             var parameters = new Dictionary<string, RuntimeValue>();
@@ -50,16 +50,37 @@ namespace Inedo.Extensions.Scripting.PowerShell
                         variables[var.Key] = value;
                 }
 
-                if (useAhDirectives)
+                if (executionMode == PsExecutionMode.Collect || executionMode == PsExecutionMode.Configure)
                 {
-                    if (!string.IsNullOrWhiteSpace(scriptInfo.ConfigKeyVariableName))
-                        outArguments[scriptInfo.ConfigKeyVariableName.TrimStart('$')] = string.Empty;
-
-                    if (!string.IsNullOrWhiteSpace(scriptInfo.ConfigValueVariableName))
-                        outArguments[scriptInfo.ConfigValueVariableName.TrimStart('$')] = string.Empty;
+                    if (scriptInfo.ConfigParameters?.Count > 0)
+                    {
+                        var uniqueConfigKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                        void setOutputVariable(string oe)
+                        {
+                            if (oe?.StartsWith("$") == true)
+                                outArguments[oe.TrimStart('$')] = string.Empty;
+                        }
+                        foreach (var configParam in scriptInfo.ConfigParameters)
+                        {
+                            var uniqueKey = $"{configParam.ConfigType},{configParam.ConfigKey}";
+                            if (!uniqueConfigKeys.Add(uniqueKey))
+                            {
+                                logger.LogWarning(
+                                    "There are duplicate configuration type/key (AHCONFIGKEY, AHCONFIGTYPE) values specified in the script. " +
+                                    $"Only the first set ({uniqueKey}) will be used."
+                                );
+                                continue;
+                            }
+                            setOutputVariable(configParam.ConfigType);
+                            setOutputVariable(configParam.ConfigKey);
+                            setOutputVariable(configParam.DesiredValue);
+                            setOutputVariable(configParam.CurrentValue);
+                            setOutputVariable(configParam.ValueDrifted);
+                        }
+                    }
 
                     if (!string.IsNullOrWhiteSpace(scriptInfo.ExecutionModeVariableName))
-                        variables[scriptInfo.ExecutionModeVariableName.TrimStart('$')] = executionMode;
+                        variables[scriptInfo.ExecutionModeVariableName.TrimStart('$')] = executionMode.ToString();
                 }
             }
             else
@@ -99,21 +120,75 @@ namespace Inedo.Extensions.Scripting.PowerShell
                 OutVariables = result.OutVariables
             };
 
-            if (useAhDirectives && scriptInfo != null)
+            if (executionMode == PsExecutionMode.Collect || executionMode == PsExecutionMode.Configure)
             {
-                if (!string.IsNullOrWhiteSpace(scriptInfo.ConfigKeyVariableName) && result.OutVariables.TryGetValue(scriptInfo.ConfigKeyVariableName, out var configKey))
+                var configInfos = new List<ExecuteScriptResultConfigurationInfo>();
+                if (scriptInfo?.ConfigParameters?.Count > 0)
                 {
-                    data.ConfigKey = configKey.AsString();
-                    result.OutVariables.Remove(scriptInfo.ConfigKeyVariableName);
-                }
+                    var uniqueConfigKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    var usedOutput = false;
+                    foreach (var param in scriptInfo.ConfigParameters)
+                    {
+                        var configType = getOutputExpressionValue(param.ConfigType, "PSConfig").AsString();
+                        var configKey = getOutputExpressionValue(param.ConfigKey, new RuntimeValue(fullScriptName)).AsString();
+                        var uniqueKey = $"{configType},{configKey}";
+                        if (!uniqueConfigKeys.Add(uniqueKey))
+                        {
+                            logger.LogWarning(
+                                "This script returned multiple configuration items, but each item does have a unique type/key (AHCONFIGKEY, AHCONFIGTYPE)." +
+                                $"Only the first item with the type/key ({uniqueKey}) will be recorded."
+                            );
+                            continue;
+                        }
+                        if (string.IsNullOrEmpty(param.CurrentValue))
+                        {
+                            if (usedOutput)
+                            {
+                                logger.LogWarning(
+                                    "Another configuration item is already using the script output for the current value; when multiple types are returned, " +
+                                    "a AHCURRENTVALUE help should be used."
+                                );
+                                continue;
+                            }
+                            usedOutput = true;
+                        }
+                        configInfos.Add(new ExecuteScriptResultConfigurationInfo
+                        {
+                            ConfigType = configType,
+                            ConfigKey = configKey,
+                            DesiredConfigValue = getOutputExpressionValue(param.DesiredValue, new RuntimeValue(true)),
+                            CurrentConfigValue = getOutputExpressionValue(param.CurrentValue, result.Output.FirstOrDefault()),
+                            DriftDetected = getOutputExpressionValue(param.ValueDrifted, null).AsBoolean()
+                        });
+                    }
 
-                if (!string.IsNullOrWhiteSpace(scriptInfo.ConfigValueVariableName) && result.OutVariables.TryGetValue(scriptInfo.ConfigValueVariableName, out var configValue))
-                {
-                    data.ConfigValue = configValue;
-                    result.OutVariables.Remove(scriptInfo.ConfigValueVariableName);
+                    RuntimeValue getOutputExpressionValue(string oe, RuntimeValue defaultValue)
+                    {
+                        if (string.IsNullOrEmpty(oe))
+                            return defaultValue;
+
+                        if (oe.StartsWith("$") && result.OutVariables.TryGetValue(oe.Substring(1), out var oval))
+                        {
+                            result.OutVariables.Remove(oe);
+                            return oval;
+                        }
+                        return new RuntimeValue(oe);
+                    }
                 }
+                else
+                {
+                    logger.LogDebug("Script did not define any additional help configuration parameters, so the default values will be used.");
+                    configInfos.Add(new ExecuteScriptResultConfigurationInfo
+                    {
+                        ConfigType = "PSConfig",
+                        ConfigKey = fullScriptName,
+                        DesiredConfigValue = new RuntimeValue(true),
+                        CurrentConfigValue = result.Output.FirstOrDefault()
+                    });
+                }
+                data.Configuration = configInfos;
             }
-
+            
             return data;
         }
 
