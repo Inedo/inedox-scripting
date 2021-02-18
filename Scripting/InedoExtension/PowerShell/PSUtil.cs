@@ -88,6 +88,15 @@ namespace Inedo.Extensions.Scripting.PowerShell
                 variables = arguments.ToDictionary(a => a.Key, a => a.Value);
             }
 
+            if (executionMode == PsExecutionMode.Configure && string.IsNullOrEmpty(scriptInfo?.ExecutionModeVariableName))
+            {
+                logger.LogError(
+                    ".AHEXECMODE additional help was not detected. When using PSEnsure to remediate drift, you must specify the name of " +
+                    "a variable that will capture \"Collect\" or \"Configure\" in the .AHEXECMODE help."
+                );
+                return null;
+            }
+
             var jobRunner = context.Agent.GetService<IRemoteJobExecuter>();
 
             var job = new ExecutePowerShellJob
