@@ -22,6 +22,11 @@ namespace Inedo.Extensions.Scripting.PowerShell
         public static IEnumerable<PSConfigParameterInfo> FromDocumentationBlocks(ILookup<string, (string param, string content)> docBlocks)
         {
             var names = new[] { "AHCONFIGTYPE", "AHCONFIGKEY", "AHDESIREDVALUE", "AHCURRENTVALUE", "AHVALUEDRIFTED" };
+            var ahBlocks = docBlocks
+                .Where(l => names.Contains(l.Key, StringComparer.OrdinalIgnoreCase));
+            if (!ahBlocks.Any())
+                yield break;
+
             var numParams = docBlocks
                 .Where(l => names.Contains(l.Key, StringComparer.OrdinalIgnoreCase))
                 .Max(l => l.Count());
