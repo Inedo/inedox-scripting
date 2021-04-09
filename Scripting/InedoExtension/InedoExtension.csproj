@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <RootNamespace>Inedo.Extensions.Scripting</RootNamespace>
     <AssemblyName>Scripting</AssemblyName>
@@ -9,7 +8,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <OutputType>Library</OutputType>
   </PropertyGroup>
-<ItemGroup>
+  <ItemGroup>
     <PackageReference Include="Inedo.SDK" Version="1.10.0">
       <ExcludeAssets>runtime</ExcludeAssets>
     </PackageReference>

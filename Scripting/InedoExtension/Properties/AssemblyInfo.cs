@@ -2,9 +2,9 @@
 using Inedo.Extensibility;
 
 [assembly: AssemblyTitle("Scripting")]
-[assembly: AssemblyDescription("Provides operations for powershell and shell scripting.")]
+[assembly: AssemblyDescription("Provides operations for PowerShell and shell scripting.")]
 [assembly: AssemblyCompany("Inedo, LLC.")]
-[assembly: AssemblyCopyright("Copyright © Inedo 2020")]
+[assembly: AssemblyCopyright("Copyright © Inedo 2021")]
 [assembly: AssemblyProduct("any")]
 
 // Not for ProGet
