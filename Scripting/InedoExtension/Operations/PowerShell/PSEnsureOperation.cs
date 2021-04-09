@@ -59,7 +59,7 @@ PSEnsure hdars (
                 fullScriptName: scriptName,
                 arguments: this.NamedArguments,
                 outArguments: this.OutArguments,
-                collectOutput: false,
+                collectOutput: true,
                 progressUpdateHandler: (s, e) => this.currentProgress = e,
                 executionMode: PsExecutionMode.Collect
             );
@@ -86,7 +86,7 @@ PSEnsure hdars (
                 return;
             }
 
-            _ = await PSUtil.ExecuteScriptAssetAsync(
+            var result = await PSUtil.ExecuteScriptAssetAsync(
                 logger: this,
                 context: context,
                 fullScriptName: scriptName,
@@ -96,6 +96,7 @@ PSEnsure hdars (
                 progressUpdateHandler: (s, e) => this.currentProgress = e,
                 executionMode: PsExecutionMode.Configure
             );
+            this.collectedConfiguration = new PSPersistedConfiguration(result);
         }
         public override OperationProgress GetProgress()
         {
