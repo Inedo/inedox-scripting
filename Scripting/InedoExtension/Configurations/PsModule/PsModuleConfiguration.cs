@@ -11,6 +11,7 @@ using Inedo.Extensibility;
 using Inedo.Extensibility.Configurations;
 using Inedo.Extensibility.Operations;
 using Inedo.Extensions.Scripting.PowerShell;
+using Inedo.Extensions.Scripting.PowerShell.Versions;
 using Inedo.Serialization;
 using Inedo.Web;
 
@@ -40,6 +41,10 @@ namespace Inedo.Extensions.Scripting.Configurations.PsModule
         [ScriptAlias("Version")]
         [DisplayName("Version")]
         public string Version { get; set; }
+        [Persistent]
+        [ScriptAlias("MinimumVersion")]
+        [DisplayName("Minimum Version")]
+        public string MinimumVersion { get; set; }
 
         [Persistent]
         [ScriptAlias("Force")]
@@ -160,8 +165,11 @@ namespace Inedo.Extensions.Scripting.Configurations.PsModule
                     new Hilite(config[nameof(ModuleName)])
                 );
             var version = config[nameof(Version)];
-            if (!string.IsNullOrWhiteSpace(version))
+            var minVersion = config[nameof(MinimumVersion)];
+            if (!string.IsNullOrWhiteSpace(version) && string.IsNullOrWhiteSpace(minVersion))
                 description.AppendContent(" version ", new Hilite(version));
+            if (!string.IsNullOrWhiteSpace(minVersion))
+                description.AppendContent(" minimum version ", new Hilite(minVersion));
             description.AppendContent(" is installed.");
             return new ExtendedRichDescription(description);
         }
@@ -183,9 +191,14 @@ namespace Inedo.Extensions.Scripting.Configurations.PsModule
                 return Task.FromResult(new ComparisonResult(differences));
             }
 
-            if (!string.IsNullOrWhiteSpace(this.Version) && !this.Version.Equals(module.Version, StringComparison.OrdinalIgnoreCase))
+            if (!string.IsNullOrWhiteSpace(this.Version) && PowerShellVersion.Parse(this.Version) != PowerShellVersion.Parse(module.Version) && string.IsNullOrWhiteSpace(this.MinimumVersion))
             {
                 differences.Add(new Difference(nameof(Version), this.Version, module.Version));
+            }
+
+            if (!string.IsNullOrWhiteSpace(this.MinimumVersion) && PowerShellVersion.Parse(module.Version) < PowerShellVersion.Parse(this.MinimumVersion))
+            {
+                differences.Add(new Difference(nameof(MinimumVersion), this.MinimumVersion, module.Version));
             }
 
             return Task.FromResult(new ComparisonResult(differences));
@@ -201,8 +214,10 @@ namespace Inedo.Extensions.Scripting.Configurations.PsModule
 
             var jobRunner = await context.Agent.GetServiceAsync<IRemoteJobExecuter>();
             var scriptText = template.Exists ? $"Install-Module -Name $Name" : "Uninstall-Module -Name $Name";
-            if (!string.IsNullOrWhiteSpace(template.Version))
+            if (!string.IsNullOrWhiteSpace(template.Version) && string.IsNullOrWhiteSpace(template.MinimumVersion))
                 scriptText += " -RequiredVersion $Version";
+            if (!string.IsNullOrWhiteSpace(template.MinimumVersion))
+                scriptText += " -MinimumVersion $MinimumVersion";
             if (template.Force)
                 scriptText += " -Force";
             if (template.AllVersions && !template.Exists)
@@ -224,6 +239,7 @@ namespace Inedo.Extensions.Scripting.Configurations.PsModule
             {
                 ["Name"] = template.ModuleName,
                 ["Version"] = template.Version,
+                ["MinimumVersion"] = template.MinimumVersion,
                 ["Scope"] = template.Scope,
                 ["Repository"] = template.Repository
             };
