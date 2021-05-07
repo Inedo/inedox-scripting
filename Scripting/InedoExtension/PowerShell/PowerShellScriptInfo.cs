@@ -12,9 +12,8 @@ namespace Inedo.Extensions.Scripting.PowerShell
         public string Name { get; private set; }
         public string Description { get; private set; }
         public ReadOnlyCollection<PowerShellParameterInfo> Parameters { get; private set; }
-
-        public string ConfigKeyVariableName { get; private set; }
-        public string ConfigValueVariableName { get; private set; }
+        public ReadOnlyCollection<PSConfigParameterInfo> ConfigParameters { get; private set; }
+       
         public string ExecutionModeVariableName { get; private set; }
 
         public override string ToString() => $"{this.Name ?? "??"}({(this.Parameters == null ? "??" : string.Join(", ", this.Parameters))})";

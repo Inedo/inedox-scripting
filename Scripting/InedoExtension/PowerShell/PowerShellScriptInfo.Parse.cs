@@ -58,28 +58,27 @@ namespace Inedo.Extensions.Scripting.PowerShell
                     .Select(m => new
                     {
                         Name = m.Groups[1].Value,
-                        Arg = !string.IsNullOrWhiteSpace(m.Groups[2].Value) ? m.Groups[2].Value.Trim() : null,
-                        Value = !string.IsNullOrWhiteSpace(m.Groups[3].Value) ? SpaceCollapseRegex.Value.Replace(m.Groups[3].Value.Trim(), " ") : null
+                        Param = !string.IsNullOrWhiteSpace(m.Groups[2].Value) ? m.Groups[2].Value.Trim() : null,
+                        Content = !string.IsNullOrWhiteSpace(m.Groups[3].Value) ? SpaceCollapseRegex.Value.Replace(m.Groups[3].Value.Trim(), " ") : null
                     })
-                    .Where(d => d.Value != null)
+                    .Where(d => d.Content != null)
                     .ToLookup(
                         d => d.Name,
-                        d => new { d.Arg, d.Value },
+                        d => ( d.Param, d.Content),
                         StringComparer.OrdinalIgnoreCase);
 
                 return new PowerShellScriptInfo
                 {
-                    ConfigKeyVariableName = docBlocks["AHCONFIGKEY"].FirstOrDefault()?.Value,
-                    ConfigValueVariableName = docBlocks["AHCONFIGVALUE"].FirstOrDefault()?.Value,
-                    ExecutionModeVariableName = docBlocks["AHEXECMODE"].FirstOrDefault()?.Value,
-                    Description = docBlocks["SYNOPSIS"].Concat(docBlocks["DESCRIPTION"]).Select(d => d.Value).FirstOrDefault(),
+                    ExecutionModeVariableName = docBlocks["AHEXECMODE"].FirstOrDefault().Content,
+                    ConfigParameters = Array.AsReadOnly(PSConfigParameterInfo.FromDocumentationBlocks(docBlocks).ToArray()),
+                    Description = docBlocks["SYNOPSIS"].Concat(docBlocks["DESCRIPTION"]).Select(d => d.Content).FirstOrDefault(),
                     Parameters = Array.AsReadOnly(parameters.GroupJoin(
                         docBlocks["PARAMETER"],
                         p => p.Name,
-                        d => d.Arg,
+                        d => d.Param,
                         (p, d) => new PowerShellParameterInfo(
                             name: p.Name,
-                            description: d.Select(t => t.Value).FirstOrDefault(),
+                            description: d.Select(t => t.Content).FirstOrDefault(),
                             defaultValue: p.DefaultValue,
                             isBooleanOrSwitch: p.IsBooleanOrSwitch,
                             isOutput: p.IsOutput

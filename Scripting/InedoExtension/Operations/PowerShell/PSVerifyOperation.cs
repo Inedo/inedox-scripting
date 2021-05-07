@@ -13,6 +13,7 @@ using Inedo.Web.Editors.Operations;
 
 namespace Inedo.Extensions.Scripting.Operations.PowerShell
 {
+
     [DisplayName("PSVerify")]
     [Description("Uses a PowerShell script to collect configuration about a server.")]
     [ScriptAlias("PSVerify")]
@@ -26,6 +27,8 @@ namespace Inedo.Extensions.Scripting.Operations.PowerShell
         public RuntimeValue DefaultArgument { get; set; }
         public IReadOnlyDictionary<string, RuntimeValue> NamedArguments { get; set; }
         public IDictionary<string, RuntimeValue> OutArguments { get; set; }
+
+        private PSPersistedConfiguration collectedConfiguration;
 
         public override async Task<PersistedConfiguration> CollectAsync(IOperationCollectionContext context)
         {
@@ -48,18 +51,18 @@ namespace Inedo.Extensions.Scripting.Operations.PowerShell
                 fullScriptName: scriptName,
                 arguments: this.NamedArguments,
                 outArguments: this.OutArguments,
-                collectOutput: false,
-                useAhDirectives: true,
+                collectOutput: true,
                 progressUpdateHandler: (s, e) => this.currentProgress = e,
-                executionMode: "Collect"
+                executionMode: PsExecutionMode.Collect
             );
 
-            return new KeyValueConfiguration
-            {
-                Key = result.ConfigKey,
-                Value = result.ConfigValue.ToString()
-            };
+            this.collectedConfiguration = new PSPersistedConfiguration(result);
+            return this.collectedConfiguration;
         }
+        public override PersistedConfiguration GetConfigurationTemplate() => this.collectedConfiguration;
+        public override Task StoreConfigurationStatusAsync(PersistedConfiguration actual, ComparisonResult results, ConfigurationPersistenceContext context)
+            => this.collectedConfiguration.StoreConfigurationStatusAsync(context);
+
         public override OperationProgress GetProgress()
         {
             var p = this.currentProgress;
