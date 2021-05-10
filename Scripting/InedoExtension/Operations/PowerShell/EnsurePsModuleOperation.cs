@@ -4,7 +4,6 @@ using Inedo.Documentation;
 using Inedo.Extensibility;
 using Inedo.Extensibility.Configurations;
 using Inedo.Extensibility.Operations;
-
 using Inedo.Extensions.Scripting.Configurations.PsModule;
 
 namespace Inedo.Extensions.Scripting.Operations.PowerShell
@@ -16,25 +15,25 @@ namespace Inedo.Extensions.Scripting.Operations.PowerShell
     [ScriptNamespace(Namespaces.PowerShell, PreferUnqualified = true)]
     [Note("An argument may be explicitly converted to an integral type by prefixing the value with [type::<typeName>], where <typeName> is one of: int, uint, long, ulong, double, decimal. Normally this conversion is performed automatically and this is not necessary.")]
     [Example(@"
-# ensures the existence of a file on the server
-Ensure-DscResource(
-  Name: File,
-  ConfigurationKey: DestinationPath,
-  Properties: %(
-    DestinationPath: C:\hdars\1000.txt,
-    Contents: test file ensured)
+# ensures the existence of a module on the server
+Ensure-PsModule
+(
+    Module: PackageManagement,
+    MinimumVersion: 1.4.6,
+    Repository: internal-powershell,
+    Exists: true
 );
 
-# runs a custom resource
-Ensure-DscResource(
-  Name: cHdars,
-  Module: cHdarsResource,
-  ConfigurationKey: LocalServer,
-  Properties: %(
-    MaximumSessionLength: 1000,
-    PortsToListen: @(3322,4431,1123),
-    Enabled: true)
-);")]
+# ensures the existence of a specific version of a module on the server
+Ensure-PsModule
+(
+    Module: PackageManagement,
+    Version: 1.4.6,
+    Repository: internal-powershell,
+    Force: true,
+    Exists: true
+);
+")]
     public sealed class EnsurePsModuleOperation : EnsureOperation<PsModuleConfiguration>
     {
         protected override ExtendedRichDescription GetDescription(IOperationConfiguration config) => PsModuleConfiguration.GetDescription(config);

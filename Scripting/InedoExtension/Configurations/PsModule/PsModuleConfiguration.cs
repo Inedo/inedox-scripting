@@ -191,7 +191,7 @@ namespace Inedo.Extensions.Scripting.Configurations.PsModule
                 return Task.FromResult(new ComparisonResult(differences));
             }
 
-            if (!string.IsNullOrWhiteSpace(this.Version) && PowerShellVersion.Parse(this.Version) != PowerShellVersion.Parse(module.Version) && string.IsNullOrWhiteSpace(this.MinimumVersion))
+            if (string.IsNullOrWhiteSpace(this.MinimumVersion) && !string.IsNullOrWhiteSpace(this.Version) && PowerShellVersion.Parse(this.Version) != PowerShellVersion.Parse(module.Version))
             {
                 differences.Add(new Difference(nameof(Version), this.Version, module.Version));
             }
