@@ -80,12 +80,18 @@ pscall hdars (
             var scriptName = LooselyQualifiedName.TryParse(defaultArg);
             if (scriptName != null)
             {
-                var info = PowerShellScriptInfo.TryLoad(scriptName);
-                if (!string.IsNullOrEmpty(info?.Description))
+                // HACK
+                // Additional context required to load script from raft (SDK-74), so we can't load the script to get the description until we get that added to SDK
+                if (SDK.ProductName != "BuildMaster")
                 {
-                    longDesc.AppendContent(info.Description);
-                    longDescInclused = true;
+                    var info = PowerShellScriptInfo.TryLoad(scriptName);
+                    if (!string.IsNullOrEmpty(info?.Description))
+                    {
+                        longDesc.AppendContent(info.Description);
+                        longDescInclused = true;
+                    }
                 }
+                // END HACK
 
                 var listParams = new List<string>();
                 foreach (var prop in config.NamedArguments)
