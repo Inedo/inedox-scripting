@@ -5,6 +5,7 @@ using System.Linq;
 using System.Management.Automation;
 using System.Text.RegularExpressions;
 using Inedo.Extensibility.RaftRepositories;
+using Inedo.Web;
 
 namespace Inedo.Extensions.Scripting.PowerShell
 {
@@ -98,13 +99,52 @@ namespace Inedo.Extensions.Scripting.PowerShell
             };
         }
 
-        public static PowerShellScriptInfo TryLoad(LooselyQualifiedName scriptName)
+        public static PowerShellScriptInfo TryLoad(LooselyQualifiedName scriptName, object context = null)
         {
+            // this is a preposterous hack, and should be removed as soon as we get context added to SDK (see SDK-74)
+            if (SDK.ProductName == "BuildMaster")
+            {
+                // this is only ever called from the planeditor page, but there are multiple ways to get the data...
+                if (HttpContextThatWorksOnLinux.Current == null)
+                    return null;
+
+                // the really easy way to get the applicationId (building the operation editor)
+                var applicationId = AH.ParseInt(HttpContextThatWorksOnLinux.Current.Request.QueryString["applicationId"]);
+                if (!applicationId.HasValue)
+                {
+                    // the "other" ways (rebuilding TSSatements)
+                    var fullItemId = AH.CoalesceString(
+                        HttpContextThatWorksOnLinux.Current.Request.QueryString["planId"],
+                        HttpContextThatWorksOnLinux.Current.Request.Form["additionalContext"]
+                    );
+                    if (string.IsNullOrEmpty(fullItemId))
+                        return null;
+
+                    // this is logic based on RaftItemId.TryParse
+                    var parts = fullItemId.Split(new[] { "::" }, StringSplitOptions.RemoveEmptyEntries);
+                    if (parts.Length != 4)
+                        return null;
+
+                    if (string.Equals(parts[1], "global", StringComparison.OrdinalIgnoreCase))
+                        return null;
+
+                    // find the appId by name
+                    var appIdtyp = Type.GetType("Inedo.BuildMaster.ApplicationId,BuildMaster");
+                    var appId = Activator.CreateInstance(appIdtyp, parts[1]);
+                    applicationId = (int)appIdtyp.GetProperty("Id").GetValue(appId);
+                }
+
+                // stuff into a SimpleContext
+                var ctxTyp = Type.GetType("Inedo.BuildMaster.Extensibility.SimpleBuildMasterContext,BuildMaster");
+                context = Activator.CreateInstance(ctxTyp, /*applicationGroupId*/null, applicationId, /*deployableId*/null, /*executionId*/null, /*environmentId*/null, /*serverId*/null, /*promotionId*/null, /*serverRoleId*/null, /*releaseId*/null, /*buildId*/null);
+            }
+            // END HACK
+
             var name = scriptName.FullName;
             if (!name.EndsWith(".ps1", StringComparison.OrdinalIgnoreCase))
                 name += ".ps1";
 
-            var item = SDK.GetRaftItem(RaftItemType.Script, name, null);
+            var item = SDK.GetRaftItem(RaftItemType.Script, name, context);
             if (item == null)
                 return null;
 
