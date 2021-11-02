@@ -16,9 +16,6 @@ namespace Inedo.Extensions.Scripting.SuggestionProviders
 
             IEnumerable<string> getItems()
             {
-                if (string.IsNullOrEmpty(config["ScriptName"]))
-                    return Enumerable.Empty<string>();
-
                 return SDK.GetRaftItems(RaftItemType.Script, config.EditorContext)
                     .Where(i => i.Name.EndsWith(".sh", StringComparison.OrdinalIgnoreCase))
                     .OrderBy(i => i.Name)
