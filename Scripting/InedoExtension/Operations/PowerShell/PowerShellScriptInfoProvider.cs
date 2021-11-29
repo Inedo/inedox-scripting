@@ -6,10 +6,12 @@ namespace Inedo.Extensions.Scripting.Operations.PowerShell
 {
     internal sealed class PowerShellScriptInfoProvider : ICallScriptInfoProvider
     {
-        public CallScriptInfo TryLoad(string name)
+        public CallScriptInfo TryLoad(string name) => this.TryLoad(name, null);
+
+        public CallScriptInfo TryLoad(string name, object loadContext)
         {
             var scriptName = LooselyQualifiedName.Parse(name);
-            var info = PowerShellScriptInfo.TryLoad(scriptName);
+            var info = PowerShellScriptInfo.TryLoad(scriptName, loadContext);
             if (info == null)
                 return null;
 
