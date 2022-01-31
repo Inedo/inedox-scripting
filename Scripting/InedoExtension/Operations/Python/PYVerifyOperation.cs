@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading.Tasks;
-using Inedo.Diagnostics;
 using Inedo.Documentation;
 using Inedo.ExecutionEngine;
 using Inedo.Extensibility;
@@ -14,12 +13,13 @@ using Inedo.Web;
 
 namespace Inedo.Extensions.Scripting.Operations.Python
 {
-    [DisplayName("PYVerify")]
-    [Description("Uses a Python script to collect configuration about a server.")]
-    [ScriptAlias("PYVerify")]
     [Tag("python")]
+    [DisplayName("PYVerify")]
+    [ScriptAlias("PYVerify")]
+    [DefaultProperty(nameof(ScriptName))]
     [ScriptNamespace("Python", PreferUnqualified = true)]
-    internal sealed class PYVerifyOperation : VerifyOperation, IPythonOperation, IScriptingOperation
+    [Description("Uses a Python script to collect configuration about a server.")]
+    public sealed class PYVerifyOperation : VerifyOperation, IPythonOperation, IScriptingOperation
     {
         private PYPersistedConfiguration collectedConfiguration;
 

@@ -80,7 +80,9 @@ namespace Inedo.Extensions.Scripting.ScriptLanguages
                 }
             }
 
-            var configVars = sections.ReadConfigVariables();
+            var execMode = sections.GetMerged("AhExecMode")?.Trim();
+
+            var configVars = sections.ReadConfigurationValues();
 
             var ahArgsFormatText = sections.GetMerged("AhArgsFormat")?.Trim();
             if (!string.IsNullOrEmpty(ahArgsFormatText))
@@ -95,7 +97,7 @@ namespace Inedo.Extensions.Scripting.ScriptLanguages
                 }
             }
 
-            return new ScriptInfo(parameters, summary, warnings, ahArgsFormatText, configVars);
+            return new ScriptInfo(parameters, summary, warnings, ahArgsFormatText, configVars, execMode);
         }
 
         private static IEnumerable<string> GetParameters(SectionList sections, string title)

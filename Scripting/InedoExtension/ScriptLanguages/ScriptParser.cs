@@ -90,11 +90,11 @@ namespace Inedo.Extensions.Scripting.ScriptLanguages
                         yield return s.Trim();
                 }
             }
-            public IReadOnlyList<ScriptConfigVariables> ReadConfigVariables()
+            public IReadOnlyList<ScriptConfigurationValues> ReadConfigurationValues()
             {
-                var results = new List<ScriptConfigVariables>();
+                var results = new List<ScriptConfigurationValues>();
 
-                var current = new ScriptConfigVariables();
+                var current = new ScriptConfigurationValues();
                 var alreadyInclused = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
                 foreach (var section in sections)
@@ -103,21 +103,21 @@ namespace Inedo.Extensions.Scripting.ScriptLanguages
                     if (!alreadyInclused.Add(section.Key))
                     {
                         results.Add(current);
-                        current = new ScriptConfigVariables();
+                        current = new ScriptConfigurationValues();
                         alreadyInclused.Clear();
                         alreadyInclused.Add(section.Key);
                     }
 
                     if (section.Key.Equals("AhConfigType", StringComparison.OrdinalIgnoreCase))
-                        current.ConfigType = section.Value;
+                        current.ConfigType = section.Value.Trim();
                     else if (section.Key.Equals("AhConfigKey", StringComparison.OrdinalIgnoreCase))
-                        current.ConfigKey = section.Value;
+                        current.ConfigKey = section.Value.Trim();
                     else if (section.Key.Equals("AhDesiredValue", StringComparison.OrdinalIgnoreCase))
-                        current.DesiredValue = section.Value;
+                        current.DesiredValue = section.Value.Trim();
                     else if (section.Key.Equals("AhCurrentValue", StringComparison.OrdinalIgnoreCase))
-                        current.CurrentValue = section.Value;
+                        current.CurrentValue = section.Value.Trim();
                     else if (section.Key.Equals("AhValueDrifted", StringComparison.OrdinalIgnoreCase))
-                        current.ValueDrifted = section.Value;
+                        current.ValueDrifted = section.Value.Trim();
                 }
 
                 if (current != null && (current.ConfigKey != null || current.ConfigType != null || current.CurrentValue != null || current.DesiredValue != null || current.ValueDrifted != null))

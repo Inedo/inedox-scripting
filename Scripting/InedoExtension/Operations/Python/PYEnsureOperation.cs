@@ -14,9 +14,10 @@ using Inedo.Web;
 namespace Inedo.Extensions.Scripting.Operations.Python
 {
     [DisplayName("PYEnsure")]
-    [Description("Uses two Python scripts to Collect, and then Ensure a configuration about a server.")]
     [ScriptAlias("PYEnsure")]
+    [DefaultProperty(nameof(ScriptName))]
     [ScriptNamespace("Python", PreferUnqualified = true)]
+    [Description("Uses two Python scripts to Collect, and then Ensure a configuration about a server.")]
     public sealed class PYEnsureOperation : EnsureOperation, IPythonOperation, IScriptingOperation
     {
         private PYPersistedConfiguration collectedConfiguration;

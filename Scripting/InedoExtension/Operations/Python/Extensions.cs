@@ -192,7 +192,7 @@ namespace Inedo.Extensions.Scripting.Operations.Python
             }
 
             if (!string.IsNullOrWhiteSpace(scriptInfo.ExecModeVariable))
-                inputVars.Add(scriptInfo.ExecModeVariable, execMode);
+                inputVars.Add(scriptInfo.ExecModeVariable.TrimStart('$'), execMode);
 
             var originalOutVars = operation.OutputVariables?.ToList();
 
@@ -200,22 +200,13 @@ namespace Inedo.Extensions.Scripting.Operations.Python
             if (operation.OutputVariables != null)
                 ahOutVars.UnionWith(operation.OutputVariables);
 
-            foreach (var c in scriptInfo.ConfigVariables)
+            foreach (var c in scriptInfo.ConfigValues)
             {
-                if (!string.IsNullOrWhiteSpace(c.ConfigKey))
-                    ahOutVars.Add(c.ConfigKey);
-
-                if (!string.IsNullOrWhiteSpace(c.ConfigType))
-                    ahOutVars.Add(c.ConfigType);
-
-                if (!string.IsNullOrWhiteSpace(c.CurrentValue))
-                    ahOutVars.Add(c.CurrentValue);
-
-                if (!string.IsNullOrWhiteSpace(c.DesiredValue))
-                    ahOutVars.Add(c.DesiredValue);
-
-                if (!string.IsNullOrWhiteSpace(c.ValueDrifted))
-                    ahOutVars.Add(c.ValueDrifted);
+                addOutVar(c.ConfigKey);
+                addOutVar(c.ConfigType);
+                addOutVar(c.CurrentValue);
+                addOutVar(c.DesiredValue);
+                addOutVar(c.ValueDrifted);
             }
 
             var ahStartInfo = new PythonStartInfo
@@ -231,35 +222,51 @@ namespace Inedo.Extensions.Scripting.Operations.Python
 
             var configResults = new List<ExecuteScriptResultConfigurationInfo>();
 
-            foreach (var c in scriptInfo.ConfigVariables)
+            if (result.OutVariables != null)
             {
-                configResults.Add(
-                    new ExecuteScriptResultConfigurationInfo
-                    {
-                        ConfigKey = tryGetOutVar(c.ConfigKey),
-                        ConfigType = tryGetOutVar(c.ConfigType),
-                        CurrentConfigValue = tryGetOutVar(c.CurrentValue),
-                        DesiredConfigValue = tryGetOutVar(c.DesiredValue),
-                        DriftDetected = bool.TryParse(tryGetOutVar(c.ValueDrifted), out bool b) ? b : null
-                    }
-                );
+                foreach (var c in scriptInfo.ConfigValues)
+                {
+                    configResults.Add(
+                        new ExecuteScriptResultConfigurationInfo
+                        {
+                            ConfigKey = tryGetOutVar(c.ConfigKey),
+                            ConfigType = tryGetOutVar(c.ConfigType),
+                            CurrentConfigValue = tryGetOutVar(c.CurrentValue),
+                            DesiredConfigValue = tryGetOutVar(c.DesiredValue),
+                            DriftDetected = bool.TryParse(tryGetOutVar(c.ValueDrifted), out bool b) ? b : null
+                        }
+                    );
+                }
             }
 
             result.Configuration = configResults;
             if (result.OutVariables != null)
             {
-                foreach (var v in ahOutVars.Except(originalOutVars, StringComparer.OrdinalIgnoreCase))
+                foreach (var v in ahOutVars.Except(originalOutVars?.AsEnumerable() ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase))
                     result.OutVariables.Remove(v);
             }
 
             return result;
 
+            void addOutVar(string value)
+            {
+                if (!string.IsNullOrWhiteSpace(value) && value.StartsWith("$"))
+                    ahOutVars.Add(value.Substring(1));
+            }
+
             string tryGetOutVar(string varName)
             {
-                if (!string.IsNullOrWhiteSpace(varName) && result.OutVariables.TryGetValue(varName, out var value))
-                    return value.AsString();
+                if (varName?.StartsWith("$") == true)
+                {
+                    if (result.OutVariables.TryGetValue(varName.Substring(1), out var value))
+                        return value.AsString();
+                    else
+                        return null;
+                }
                 else
-                    return null;
+                {
+                    return AH.NullIf(varName, string.Empty);
+                }
             }
         }
 
