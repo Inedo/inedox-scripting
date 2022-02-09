@@ -30,13 +30,12 @@ PSEnsure hdars (
 ")]
     public sealed class PSEnsureOperation : EnsureOperation, ICustomArgumentMapper
     {
+        private PSPersistedConfiguration collectedConfiguration;
         private volatile PSProgressEventArgs currentProgress;
 
         public RuntimeValue DefaultArgument { get; set; }
         public IReadOnlyDictionary<string, RuntimeValue> NamedArguments { get; set; }
         public IDictionary<string, RuntimeValue> OutArguments { get; set; }
-        
-        private PSPersistedConfiguration collectedConfiguration;
 
         public override async Task<PersistedConfiguration> CollectAsync(IOperationCollectionContext context)
         {
