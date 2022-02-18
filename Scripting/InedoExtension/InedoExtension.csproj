@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <RootNamespace>Inedo.Extensions.Scripting</RootNamespace>
     <AssemblyName>Scripting</AssemblyName>
@@ -10,9 +10,11 @@
   </PropertyGroup>
   <ItemGroup>
     <None Remove="ScriptLanguages\script-python.svg" />
+    <None Remove="ScriptLanguages\windows-batch.svg" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="ScriptLanguages\script-python.svg" />
+    <EmbeddedResource Include="ScriptLanguages\windows-batch.svg" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Inedo.SDK" Version="1.14.0-ci.15">
