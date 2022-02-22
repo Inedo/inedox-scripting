@@ -48,6 +48,8 @@ namespace Inedo.Extensions.Scripting.Operations.Batch
 
         ScriptLanguageInfo IScriptingOperation.ScriptLanguage => new WindowsBatchScriptLanguage();
 
+        private static readonly LazyRegex LogMessageRegex = new(@"(?<1>[A-Z]+):(?<2>.*)$");
+
         public override async Task ExecuteAsync(IOperationExecutionContext context)
         {
             var fileOps = await context.Agent.GetServiceAsync<IFileOperationsExecuter>();
@@ -126,6 +128,28 @@ namespace Inedo.Extensions.Scripting.Operations.Batch
                 await fileOps.DeleteFileAsync(fileName);
             }
 
+        }
+
+        protected override void LogProcessError(string text)
+        {
+            var m = LogMessageRegex.Match(text);
+            if (m.Success)
+            {
+                var level = m.Groups[1].Value switch
+                {
+                    "DEBUG" => MessageLevel.Debug,
+                    "INFO" => MessageLevel.Information,
+                    "WARNING" => MessageLevel.Warning,
+                    "ERROR" or "CRITICAL" => MessageLevel.Error,
+                    _ => MessageLevel.Debug
+                };
+
+                this.Log(level, m.Groups[2].Value);
+            }
+            else
+            {
+                this.LogDebug(text);
+            }
         }
 
         protected override ExtendedRichDescription GetDescription(IOperationConfiguration config)

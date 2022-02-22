@@ -2,7 +2,7 @@
 using Inedo.Extensibility;
 
 [assembly: AssemblyTitle("Scripting")]
-[assembly: AssemblyDescription("Provides operations for PowerShell, Python, and shell scripting.")]
+[assembly: AssemblyDescription("Provides operations for PowerShell, Python, Batch, and shell scripting.")]
 [assembly: AssemblyCompany("Inedo, LLC.")]
 [assembly: AssemblyCopyright("Copyright © Inedo 2022")]
 [assembly: AssemblyProduct("any")]
