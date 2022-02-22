@@ -68,10 +68,7 @@ namespace Inedo.Extensions.Scripting.ScriptLanguages
             var warnings = new List<string>();
             var parameters = new List<ScriptParameterInfo>();
 
-            //Add AhParameter singular
-            // change parser to not require usage=
-
-            foreach (var paramText in GetParameters(sections, "AhParameters"))
+            foreach (var paramText in GetParameters(sections, "AhParameters", "AhParameter"))
             {
                 try
                 {
@@ -99,13 +96,25 @@ namespace Inedo.Extensions.Scripting.ScriptLanguages
                     warnings.Add($"AhArgsFormat error: " + ex.Message);
                 }
             }
+            else if(parameters.Count > 0)
+            {
+                ahArgsFormatText = String.Join(" ", parameters.Select(p => $"${p.Name}"));
+                try
+                {
+                    _ = ProcessedString.Parse(ahArgsFormatText);
+                }
+                catch (Exception ex)
+                {
+                    warnings.Add($"AhArgsFormat error: " + ex.Message);
+                }
+            }
 
             return new ScriptInfo(parameters, summary, warnings, ahArgsFormatText, configVars, execMode);
         }
 
-        private static IEnumerable<string> GetParameters(SectionList sections, string title)
+        private static IEnumerable<string> GetParameters(SectionList sections, params string[] titles)
         {
-            return sections[title]
+            return sections.GetMultiple(titles)
                 .SelectMany(s => Regex.Split(s, @"\r?\n"))
                 .Where(s => !string.IsNullOrWhiteSpace(s))
                 .Select(s => s.Trim());

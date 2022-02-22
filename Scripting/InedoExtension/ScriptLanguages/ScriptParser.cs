@@ -78,6 +78,10 @@ namespace Inedo.Extensions.Scripting.ScriptLanguages
             {
                 this.sections.Add(new KeyValuePair<string, string>(title, content));
             }
+            public IEnumerable<string> GetMultiple(params string[] titles)
+            {
+                return this.sections.Where(s => titles.Any(t => t.Equals(s.Key, StringComparison.OrdinalIgnoreCase))).Select(s => s.Value);
+            }
             public string GetMerged(string title)
             {
                 return string.Join(Environment.NewLine, this.sections.Where(s => s.Key.Equals(title, StringComparison.OrdinalIgnoreCase)).Select(s => s.Value));
