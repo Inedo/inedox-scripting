@@ -152,6 +152,28 @@ namespace Inedo.Extensions.Scripting.Operations.Batch
             }
         }
 
+        protected override void LogProcessOutput(string text)
+        {
+            var m = LogMessageRegex.Match(text);
+            if (m.Success)
+            {
+                var level = m.Groups[1].Value switch
+                {
+                    "DEBUG" => MessageLevel.Debug,
+                    "INFO" or "SUCCESS" => MessageLevel.Information,
+                    "WARNING" => MessageLevel.Warning,
+                    "ERROR" or "CRITICAL" => MessageLevel.Error,
+                    _ => MessageLevel.Debug
+                };
+
+                this.Log(level, m.Groups[2].Value);
+            }
+            else
+            {
+                this.LogDebug(text);
+            }
+        }
+
         protected override ExtendedRichDescription GetDescription(IOperationConfiguration config)
         {
             return new ExtendedRichDescription(
