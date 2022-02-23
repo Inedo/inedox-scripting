@@ -179,9 +179,6 @@ namespace Inedo.Extensions.Scripting.Operations.Batch
             return new ExtendedRichDescription(
                 new RichDescription(
                     "BATCall", new Hilite(config[nameof(ScriptName)])
-                ),
-                new RichDescription(
-                    AH.CoalesceString(config[nameof(Arguments)], "with no arguments")
                 )
             );
         }
