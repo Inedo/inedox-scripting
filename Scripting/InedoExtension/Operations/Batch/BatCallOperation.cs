@@ -60,7 +60,6 @@ namespace Inedo.Extensions.Scripting.Operations.Batch
             }
             var scriptInfo = ScriptParser.Parse<WindowsBatchScriptParser>(scriptItem.Content);
 
-            var inputVars = new Dictionary<string, RuntimeValue>(StringComparer.OrdinalIgnoreCase);
             var envVars = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             var argVars = new Dictionary<string, RuntimeValue>(StringComparer.OrdinalIgnoreCase);
             if (this.Parameters != null)
@@ -72,8 +71,8 @@ namespace Inedo.Extensions.Scripting.Operations.Batch
                         argVars[paramValue.Key] = paramValue.Value;
                     else if (paramInfo.Usage == ScriptParameterUsage.EnvironmentVariable)
                         envVars[paramValue.Key] = paramValue.Value.AsString();
-                    else if (paramInfo.Usage == ScriptParameterUsage.InputVariable)
-                        inputVars[paramValue.Key] = paramValue.Value; 
+                    else
+                        throw new InvalidOperationException($"Parameter \"{paramValue.Key}\" contains an unsupported usage type: {paramInfo.Usage}."); 
                 }
             }
 
@@ -108,8 +107,11 @@ namespace Inedo.Extensions.Scripting.Operations.Batch
                     FileName = "cmd.exe",
                     WorkingDirectory = context.WorkingDirectory,
                 };
+
                 if (this.EnvironmentVariables != null)
                     proc.EnvironmentVariables.AddRange(this.EnvironmentVariables);
+                if (envVars.Count > 0)
+                    proc.EnvironmentVariables.AddRange(envVars);
 
                 this.LogDebug($"Creating file \"{fileName}\"...");
                 await fileOps.CreateDirectoryAsync(PathEx.GetDirectoryName(fileName));
@@ -179,7 +181,7 @@ namespace Inedo.Extensions.Scripting.Operations.Batch
         {
             return new ExtendedRichDescription(
                 new RichDescription(
-                    "BATCall", new Hilite(config[nameof(ScriptName)])
+                    "BATCall ", new Hilite(config[nameof(ScriptName)])
                 )
             );
         }
