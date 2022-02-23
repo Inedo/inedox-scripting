@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 using Inedo.Agents;
 using Inedo.Diagnostics;
@@ -44,7 +43,6 @@ namespace Inedo.Extensions.Scripting.Operations.Batch
 
         IReadOnlyDictionary<string, RuntimeValue> IScriptingOperation.InputVariables { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
         IEnumerable<string> IScriptingOperation.OutputVariables { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-
 
         ScriptLanguageInfo IScriptingOperation.ScriptLanguage => new WindowsBatchScriptLanguage();
 
@@ -148,7 +146,10 @@ namespace Inedo.Extensions.Scripting.Operations.Batch
             }
             else
             {
-                this.LogDebug(text);
+                if (string.IsNullOrWhiteSpace(text))
+                    this.LogDebug(text);
+                else
+                    this.LogError(text);
             }
         }
 
