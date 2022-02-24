@@ -29,9 +29,9 @@ namespace Inedo.Extensions.Scripting.ScriptLanguages.Shell
 
             // look for the docstring
 
-            if (line != null && (line.StartsWith(": `") || line.StartsWith("#")))
+            if (line != null && (line.StartsWith(": '") || line.StartsWith("#")))
             {
-                var isMultiLineCommentHeader = line.StartsWith(": `");
+                var isMultiLineCommentHeader = line.StartsWith(": '");
                 var buffer = new StringBuilder();
                 while ((line = reader.ReadLine()) != null)
                 {
