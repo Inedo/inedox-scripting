@@ -11,6 +11,7 @@ using Inedo.Extensibility.Operations;
 using Inedo.Extensibility.RaftRepositories;
 using Inedo.Extensibility.ScriptLanguages;
 using Inedo.Extensions.Scripting.ScriptLanguages;
+using Inedo.Extensions.Scripting.ScriptLanguages.Python;
 using Inedo.IO;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;

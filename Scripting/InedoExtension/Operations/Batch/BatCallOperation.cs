@@ -13,8 +13,9 @@ using Inedo.Extensibility.Operations;
 using Inedo.Extensibility.RaftRepositories;
 using Inedo.Extensibility.ScriptLanguages;
 using Inedo.Extensions.Scripting.ScriptLanguages;
-using Inedo.Extensions.Scripting.ScriptLanguages.WindowsBatch;
+using Inedo.Extensions.Scripting.ScriptLanguages.Batch;
 using Inedo.IO;
+
 namespace Inedo.Extensions.Scripting.Operations.Batch
 {
     [ScriptAlias("BATCall")]

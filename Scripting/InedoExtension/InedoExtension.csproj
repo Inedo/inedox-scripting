@@ -9,13 +9,14 @@
     <OutputType>Library</OutputType>
   </PropertyGroup>
   <ItemGroup>
-    <None Remove="ScriptLanguages\bash.svg" />
-    <None Remove="ScriptLanguages\script-python.svg" />
+    <None Remove="ScriptLanguages\Shell\bash.svg" />
+    <None Remove="ScriptLanguages\Batch\windows-batch.svg" />
+    <None Remove="ScriptLanguages\Python\script-python.svg" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="ScriptLanguages\Batch\windows-batch.svg" />
+    <EmbeddedResource Include="ScriptLanguages\Python\script-python.svg" />
     <EmbeddedResource Include="ScriptLanguages\Shell\bash.svg" />
-    <EmbeddedResource Include="ScriptLanguages\script-python.svg" />
-    <EmbeddedResource Include="ScriptLanguages\windows-batch.svg" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Inedo.SDK" Version="1.14.1-ci.6">
@@ -32,10 +33,6 @@
   <ItemGroup Condition="'$(TargetFramework)'=='net5.0'">
     <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.1.0" />
     <PackageReference Include="System.Management.Automation" Version="7.1.0" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="ScriptLanguages\Batch\" />
-    <Folder Include="ScriptLanguages\Python\" />
   </ItemGroup>
   <Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="'$(TargetFramework)'=='net452'">
     <Exec Command="powershell -Command &quot;if ((Test-Path C:\LocalDev\Tools\inedoxpack\inedoxpack.exe) -And (Test-Path C:\LocalDev\Otter\Extensions -PathType Container)) { C:\LocalDev\Tools\inedoxpack\inedoxpack.exe '$(TargetDir)..\$(TargetFileName)' 'C:\LocalDev\Otter\Extensions\$(TargetName).upack' 0.0.0 }&quot;" />

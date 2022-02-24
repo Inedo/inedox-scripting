@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 using Inedo.ExecutionEngine.Variables;
 using Inedo.Extensibility.ScriptLanguages;
 
-namespace Inedo.Extensions.Scripting.ScriptLanguages
+namespace Inedo.Extensions.Scripting.ScriptLanguages.Python
 {
     internal sealed class PythonScriptParser : ScriptParser
     {
