@@ -18,8 +18,8 @@ namespace Inedo.Extensions.Scripting.ScriptLanguages
         {
             // skip any shebangs at the beginning or other comments
 
-            var line = reader.ReadLine();
-            while (line != null && string.IsNullOrWhiteSpace(line))
+            string line;
+            while (!string.IsNullOrWhiteSpace(line = reader.ReadLine()))
             {
                 line = line.Trim();
                 if (line.StartsWith("#") || line == string.Empty)
