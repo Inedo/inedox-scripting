@@ -14,7 +14,7 @@ namespace Inedo.Extensions.Scripting.ScriptLanguages.Shell
         public override string FileExtension => ".sh";
         public override string SyntaxName => "sh";
         public override FileResource Icon { get; } = new EmbeddedFileResource("Shell.bash.svg", "image/svg+xml");
-        public override Type CallOperationType => typeof(SHCallOperation);
+        public override Type CallOperationType => typeof(SHCallNewOperation);
         public override ScriptParameterUsage ParameterUsage => ScriptParameterUsage.Arguments | ScriptParameterUsage.InputVariable | ScriptParameterUsage.OutputVariable;
         protected override ScriptInfo ParseScriptInfo(RaftItem2 script)
         {

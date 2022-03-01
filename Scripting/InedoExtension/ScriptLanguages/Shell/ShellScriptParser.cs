@@ -42,7 +42,7 @@ namespace Inedo.Extensions.Scripting.ScriptLanguages.Shell
                     }
                     else if(isMultiLineCommentHeader)
                     {
-                        buffer.Append(line);
+                        buffer.AppendLine(line);
                     }
                     else
                     {
@@ -57,7 +57,7 @@ namespace Inedo.Extensions.Scripting.ScriptLanguages.Shell
         {
             var m = SectionTitleRegex.Match(line);
             if (!startsWithWhiteSpace(line) && m.Success)
-                return (null, m.Groups[1].Value);
+                return (m.Groups[2].Value, m.Groups[1].Value);
             else
                 return (line, null);
 
