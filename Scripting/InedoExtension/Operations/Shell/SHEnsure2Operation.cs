@@ -16,12 +16,12 @@ using Inedo.Web;
 namespace Inedo.Extensions.Scripting.Operations.Shell
 {
     [Tag("shell")]
-    [DisplayName("SHVerifyNew")]
-    [ScriptAlias("SHVerifyNew")]
+    [DisplayName("SHEnsure2")]
+    [ScriptAlias("SHEnsure2")]
     [DefaultProperty(nameof(ScriptName))]
     [ScriptNamespace(Namespaces.Linux, PreferUnqualified = true)]
-    [Description("Uses a Shell script to collect configuration about a server.")]
-    public sealed class SHVerifyNewOperation : VerifyOperation, IShellOperation, IScriptingOperation
+    [Description("Uses a Shell script to collect, and then Ensure a configuration about a server.")]
+    public sealed class SHEnsure2Operation : EnsureOperation, IShellOperation, IScriptingOperation
     {
         private SHPersistedConfiguration collectedConfiguration;
 
@@ -81,6 +81,14 @@ namespace Inedo.Extensions.Scripting.Operations.Shell
         {
             return this.collectedConfiguration.StoreConfigurationStatusAsync(context);
         }
+        public override async Task ConfigureAsync(IOperationExecutionContext context)
+        {
+            if (context.Simulation)
+                return;
+
+            var result = await this.ExecuteShellScriptAhAsync(context, "Configure");
+            this.collectedConfiguration = new SHPersistedConfiguration(result);
+        }
 
         protected override ExtendedRichDescription GetDescription(IOperationConfiguration config)
         {
@@ -88,7 +96,7 @@ namespace Inedo.Extensions.Scripting.Operations.Shell
             {
                 return new ExtendedRichDescription(
                     new RichDescription(
-                        "Verify ",
+                        "Ensure ",
                         new Hilite(config[nameof(this.ScriptName)])
                     ),
                     new RichDescription("using Shell")
@@ -98,7 +106,7 @@ namespace Inedo.Extensions.Scripting.Operations.Shell
             {
                 return new ExtendedRichDescription(
                     new RichDescription(
-                        "Verify ",
+                        "Ensure ",
                         new Hilite("Shell")
                     )
                 );

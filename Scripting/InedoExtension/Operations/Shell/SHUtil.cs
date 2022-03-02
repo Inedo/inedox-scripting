@@ -19,7 +19,6 @@ namespace Inedo.Extensions.Scripting.Operations.Shell
 
         /************************************ Legacy Methods ************************************/
         /*
-         * SHCall
          * SHVerify
          * SHEnsure
          */
@@ -147,9 +146,9 @@ namespace Inedo.Extensions.Scripting.Operations.Shell
         /************************************ End Legacy Methods ************************************/
         /*
          * SHExec
-         * SHCallNew
-         * SHVerifyNew
-         * SHEnsureNew
+         * SHCall
+         * SHVerify2
+         * SHEnsure2
          */
 
 
