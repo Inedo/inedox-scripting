@@ -11,5 +11,7 @@ namespace Inedo.Extensions.Scripting.Operations.Shell
     {
         bool Verbose { get; }
         bool CaptureDebug { get; }
+        MessageLevel OutputLevel { get; }
+        MessageLevel ErrorLevel { get; }
     }
 }

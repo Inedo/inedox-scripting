@@ -16,10 +16,13 @@ namespace Inedo.Extensions.Scripting.Operations.Shell
 {
     internal static class SHUtil
     {
-        private const int Octal755 = 493;
-        private const string OutVarPrefix = "!|OtterScriptOutVars|!";
-        //update this?
-        private static readonly LazyRegex LogMessageRegex = new(@"^!\|AH:(?<1>[A-Z]+)\|!(?<2>.*)$");
+
+        /************************************ Legacy Methods ************************************/
+        /*
+         * SHCall
+         * SHVerify
+         * SHEnsure
+         */
 
         public static Task<int?> ExecuteScriptAsync(IOperationExecutionContext context, TextReader scriptReader, string arguments, ILogSink logger, bool verbose, MessageLevel outputLevel = MessageLevel.Information, MessageLevel errorLevel = MessageLevel.Error)
         {
@@ -141,7 +144,18 @@ namespace Inedo.Extensions.Scripting.Operations.Shell
             return (scriptName.Substring(0, sep), scriptName.Substring(sep + 2));
         }
 
-        // Used for new Shell Scripting
+        /************************************ End Legacy Methods ************************************/
+        /*
+         * SHExec
+         * SHCallNew
+         * SHVerifyNew
+         * SHEnsureNew
+         */
+
+
+        private const int Octal755 = 493;
+        private const string OutVarPrefix = "!|OtterScriptOutVars|!";
+        
         public static async Task<ExecuteScriptResult> ExecuteShellScriptAsync(this IShellOperation operation, ShellStartInfo startInfo, IOperationExecutionContext context)
         {
 
@@ -245,12 +259,12 @@ namespace Inedo.Extensions.Scripting.Operations.Shell
                         outValues.Add(key, value);
                     }
                     else
-                        operation.LogInformation(e.Data);
+                        operation.Log(operation.OutputLevel, e.Data);
                 };
 
                 process.ErrorDataReceived += (s, e) =>
                 {
-                    operation.LogError(e.Data);
+                    operation.Log(operation.ErrorLevel, e.Data);
                 };
 
                 await process.StartAsync(context.CancellationToken);
@@ -444,13 +458,5 @@ namespace Inedo.Extensions.Scripting.Operations.Shell
 
             return item.Content;
         }
-    }
-
-    public class ShellStartInfo
-    {
-        public string ScriptText { get; set; }
-        public IReadOnlyDictionary<string, RuntimeValue> InjectedVariables { get; set; }
-        public IReadOnlyCollection<string> OutVariables { get; set; }
-        public string CommandLineArguments { get; set; }
     }
 }
