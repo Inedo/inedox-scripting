@@ -59,11 +59,12 @@ namespace Inedo.Extensions.Scripting.Operations.Shell
         public IReadOnlyDictionary<string, RuntimeValue> InputVariables { get; set; }
         [ScriptAlias("OutputVariables")]
         public IEnumerable<string> OutputVariables { get; set; }
+        [ScriptAlias("EnvironmentVariables")]
+        [DisplayName("Environment variables")]
+        public IReadOnlyDictionary<string, string> EnvironmentVariables { get; set; }
         [ScriptAlias("Arguments")]
         [DisplayName("Command line arguments")]
         public string Arguments { get; set; }
-
-        IReadOnlyDictionary<string, string> IScriptingOperation.EnvironmentVariables { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
         ScriptLanguageInfo IScriptingOperation.ScriptLanguage => new ShellScriptingLanguage();
 

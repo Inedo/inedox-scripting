@@ -204,6 +204,14 @@ namespace Inedo.Extensions.Scripting.Operations.Python
 
             if (operation.OutputVariables != null)
                 ahOutVars.UnionWith(operation.OutputVariables);
+            if (operation.EnvironmentVariables != null)
+            {
+                foreach (var envVar in operation.EnvironmentVariables)
+                {
+                    if (!envVars.ContainsKey(envVar.Key))
+                        envVars[envVar.Key] = envVar.Value;
+                }
+            }
 
             foreach (var c in scriptInfo.ConfigValues)
             {

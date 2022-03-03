@@ -62,10 +62,11 @@ namespace Inedo.Extensions.Scripting.Operations.Shell
         [ScriptAlias("Arguments")]
         [DisplayName("Command line arguments")]
         public string Arguments { get; set; }
+        [ScriptAlias("EnvironmentVariables")]
+        [DisplayName("Environment variables")]
+        public IReadOnlyDictionary<string, string> EnvironmentVariables { get; set; }
 
-        IReadOnlyDictionary<string, string> IScriptingOperation.EnvironmentVariables { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-
-        ScriptLanguageInfo IScriptingOperation.ScriptLanguage => new ShellScriptingLanguage();
+       ScriptLanguageInfo IScriptingOperation.ScriptLanguage => new ShellScriptingLanguage();
 
         public override async Task<PersistedConfiguration> CollectAsync(IOperationCollectionContext context)
         {

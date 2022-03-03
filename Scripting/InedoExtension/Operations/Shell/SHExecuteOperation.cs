@@ -30,6 +30,9 @@ namespace Inedo.Extensions.Scripting.Operations.Shell
         public IReadOnlyDictionary<string, RuntimeValue> InputVariables { get; set; }
         [ScriptAlias("OutVariables")]
         public IEnumerable<string> OutputVariables { get; set; }
+        [ScriptAlias("EnvironmentVariables")]
+        [DisplayName("Environment variables")]
+        public IReadOnlyDictionary<string, string> EnvironmentVariables { get; set; }
 
         [ScriptAlias("Arguments")]
         [DisplayName("Command line arguments")]
@@ -67,6 +70,7 @@ namespace Inedo.Extensions.Scripting.Operations.Shell
                    InjectedVariables = this.InputVariables,
                    OutVariables = this.OutputVariables?.ToList(),
                    CommandLineArguments = this.Arguments,
+                   EnvironmentVariables = this.EnvironmentVariables
                },
                context
            );

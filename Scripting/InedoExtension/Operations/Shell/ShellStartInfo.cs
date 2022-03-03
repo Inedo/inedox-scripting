@@ -10,5 +10,6 @@ namespace Inedo.Extensions.Scripting.Operations.Shell
         public IReadOnlyDictionary<string, RuntimeValue> InjectedVariables { get; set; }
         public IReadOnlyCollection<string> OutVariables { get; set; }
         public string CommandLineArguments { get; set; }
+        public IReadOnlyDictionary<string, string> EnvironmentVariables { get; set; }
     }
 }

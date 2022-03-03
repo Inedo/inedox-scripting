@@ -240,7 +240,7 @@ namespace Inedo.Extensions.Scripting.Operations.Shell
                         WorkingDirectory = context.WorkingDirectory,
                         UseUTF8ForStandardOutput = true,
                         UseUTF8ForStandardError = true
-                    }
+                    }.WithEnvironmentVariables(startInfo.EnvironmentVariables)
                 );
 
                 process.OutputDataReceived += (s, e) =>
@@ -304,6 +304,7 @@ namespace Inedo.Extensions.Scripting.Operations.Shell
             }
 
             var inputVars = new Dictionary<string, RuntimeValue>(StringComparer.OrdinalIgnoreCase);
+            var envVars = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             var argVars = new Dictionary<string, RuntimeValue>(StringComparer.OrdinalIgnoreCase);
             var ahOutVars = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
@@ -316,6 +317,8 @@ namespace Inedo.Extensions.Scripting.Operations.Shell
                     var paramInfo = scriptInfo.Parameters.FirstOrDefault(p => string.Equals(p.Name, paramValue.Key, StringComparison.OrdinalIgnoreCase));
                     if (paramInfo == null || paramInfo.Usage == ScriptParameterUsage.InputVariable || paramInfo.Usage == ScriptParameterUsage.Default)
                         inputVars[paramValue.Key] = paramValue.Value;
+                    else if (paramInfo.Usage == ScriptParameterUsage.EnvironmentVariable)
+                        envVars[paramValue.Key] = paramValue.Value.AsString();
                     else if (paramInfo.Usage == ScriptParameterUsage.Arguments)
                         argVars[paramValue.Key] = paramValue.Value;
                     else if (paramInfo.Usage == ScriptParameterUsage.OutputVariable)
@@ -351,6 +354,14 @@ namespace Inedo.Extensions.Scripting.Operations.Shell
 
             if (operation.OutputVariables != null)
                 ahOutVars.UnionWith(operation.OutputVariables);
+            if (operation.EnvironmentVariables != null)
+            {
+                foreach (var envVar in operation.EnvironmentVariables)
+                {
+                    if (!envVars.ContainsKey(envVar.Key))
+                        envVars[envVar.Key] = envVar.Value;
+                }
+            }
 
             foreach (var c in scriptInfo.ConfigValues)
             {
@@ -366,6 +377,7 @@ namespace Inedo.Extensions.Scripting.Operations.Shell
                 ScriptText = scriptText,
                 InjectedVariables = inputVars,
                 OutVariables = ahOutVars.ToList(),
+                EnvironmentVariables = envVars,
                 CommandLineArguments = commandLineArgs
             };
 

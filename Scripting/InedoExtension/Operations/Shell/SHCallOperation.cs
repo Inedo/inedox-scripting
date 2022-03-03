@@ -62,16 +62,16 @@ namespace Inedo.Extensions.Scripting.Operations.Shell
         public IReadOnlyDictionary<string, RuntimeValue> InputVariables { get; set; }
         [ScriptAlias("OutputVariables")]
         public IEnumerable<string> OutputVariables { get; set; }
+        [ScriptAlias("EnvironmentVariables")]
+        [DisplayName("Environment variables")]
+        public IReadOnlyDictionary<string, string> EnvironmentVariables { get; set; }
 
         [Category("Advanced")]
         [ScriptAlias("CaptureDebug")]
         [DisplayName("Capture debug messages")]
         public bool CaptureDebug { get; set; }
 
-
         ScriptLanguageInfo IScriptingOperation.ScriptLanguage => new ShellScriptingLanguage();
-
-        IReadOnlyDictionary<string, string> IScriptingOperation.EnvironmentVariables { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
         public override async Task ExecuteAsync(IOperationExecutionContext context)
         {
