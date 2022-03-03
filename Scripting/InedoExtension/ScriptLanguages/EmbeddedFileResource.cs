@@ -12,7 +12,7 @@ namespace Inedo.Extensions.Scripting.ScriptLanguages
 
         public EmbeddedFileResource(string resourceName, string contentType)
         {
-            this.resourceName = $"{typeof(PythonScriptLanguage).Namespace}.{resourceName}";
+            this.resourceName = $"{typeof(EmbeddedFileResource).Namespace}.{resourceName}";
             this.size = new Lazy<long>(this.GetSize);
             this.modified = new Lazy<DateTimeOffset>(this.GetModified);
             this.ContentType = contentType;
@@ -22,13 +22,13 @@ namespace Inedo.Extensions.Scripting.ScriptLanguages
         public override long Size => this.size.Value;
         public override DateTimeOffset? Modified => this.modified.Value;
 
-        public override Stream OpenRead() => typeof(PythonScriptLanguage).Assembly.GetManifestResourceStream(this.resourceName);
+        public override Stream OpenRead() => typeof(EmbeddedFileResource).Assembly.GetManifestResourceStream(this.resourceName);
 
         private long GetSize()
         {
             using var s = this.OpenRead();
             return s.Length;
         }
-        private DateTimeOffset GetModified() => File.GetLastWriteTimeUtc(typeof(PythonScriptLanguage).Assembly.Location);
+        private DateTimeOffset GetModified() => File.GetLastWriteTimeUtc(typeof(EmbeddedFileResource).Assembly.Location);
     }
 }

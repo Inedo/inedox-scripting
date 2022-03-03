@@ -13,10 +13,12 @@ using Inedo.Extensibility.Operations;
 using Inedo.Extensibility.RaftRepositories;
 using Inedo.Extensibility.ScriptLanguages;
 using Inedo.Extensions.Scripting.ScriptLanguages;
-using Inedo.Extensions.Scripting.ScriptLanguages.WindowsBatch;
+using Inedo.Extensions.Scripting.ScriptLanguages.Batch;
 using Inedo.IO;
+
 namespace Inedo.Extensions.Scripting.Operations.Batch
 {
+    [Tag("batch")]
     [ScriptAlias("BATCall")]
     [DisplayName("BATCall")]
     [DefaultProperty(nameof(ScriptName))]
@@ -91,9 +93,9 @@ namespace Inedo.Extensions.Scripting.Operations.Batch
                 commandLineArgs = (await context.ExpandVariablesAsync(scriptInfo.DefaultArgumentsFormat, argVars)).AsString();
 
 
-            if(!string.IsNullOrEmpty(this.Arguments))
+            if (!string.IsNullOrEmpty(this.Arguments))
             {
-                commandLineArgs += string.IsNullOrEmpty(commandLineArgs) ? "" : $" {this.Arguments}";
+                commandLineArgs += string.IsNullOrEmpty(commandLineArgs) ? $"{this.Arguments}" : $" {this.Arguments}";
             }
 
 

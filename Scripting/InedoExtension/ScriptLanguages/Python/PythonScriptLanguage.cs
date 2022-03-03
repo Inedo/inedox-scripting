@@ -6,7 +6,7 @@ using Inedo.Extensibility.RaftRepositories;
 using Inedo.Extensibility.ScriptLanguages;
 using Inedo.Extensions.Scripting.Operations.Python;
 
-namespace Inedo.Extensions.Scripting.ScriptLanguages
+namespace Inedo.Extensions.Scripting.ScriptLanguages.Python
 {
     [DisplayName("Python")]
     [Description("Parses additional headers in Python scripts.")]
@@ -15,7 +15,7 @@ namespace Inedo.Extensions.Scripting.ScriptLanguages
         public override string LanguageName => "Python";
         public override string SyntaxName => "python";
         public override string FileExtension => ".py";
-        public override FileResource Icon { get; } = new EmbeddedFileResource("script-python.svg", "image/svg+xml");
+        public override FileResource Icon { get; } = new EmbeddedFileResource("Python.script-python.svg", "image/svg+xml");
         public override ScriptParameterUsage ParameterUsage => ScriptParameterUsage.InputVariable | ScriptParameterUsage.OutputVariable | ScriptParameterUsage.EnvironmentVariable | ScriptParameterUsage.Arguments;
         public override Type CallOperationType => typeof(PYCallOperation);
         public override Type EnsureOperationType => typeof(PYEnsureOperation);

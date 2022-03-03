@@ -1,27 +1,29 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading.Tasks;
+using Inedo.Diagnostics;
 using Inedo.Documentation;
 using Inedo.ExecutionEngine;
 using Inedo.Extensibility;
 using Inedo.Extensibility.Configurations;
 using Inedo.Extensibility.Operations;
 using Inedo.Extensibility.ScriptLanguages;
-using Inedo.Extensions.Scripting.ScriptLanguages.Python;
+using Inedo.Extensions.Scripting.ScriptLanguages.Shell;
 using Inedo.Extensions.Scripting.SuggestionProviders;
 using Inedo.Web;
 
-namespace Inedo.Extensions.Scripting.Operations.Python
+namespace Inedo.Extensions.Scripting.Operations.Shell
 {
-    [Tag("python")]
-    [DisplayName("PYVerify")]
-    [ScriptAlias("PYVerify")]
+    [Tag("shell")]
+    [DisplayName("SHEnsure2")]
+    [ScriptAlias("SHEnsure2")]
     [DefaultProperty(nameof(ScriptName))]
-    [ScriptNamespace("Python", PreferUnqualified = true)]
-    [Description("Uses a Python script to collect configuration about a server.")]
-    public sealed class PYVerifyOperation : VerifyOperation, IPythonOperation, IScriptingOperation
+    [ScriptNamespace(Namespaces.Linux, PreferUnqualified = true)]
+    [Description("Uses a Shell script to collect, and then Ensure a configuration about a server.")]
+    public sealed class SHEnsure2Operation : EnsureOperation, IShellOperation, IScriptingOperation
     {
-        private PYPersistedConfiguration collectedConfiguration;
+        private SHPersistedConfiguration collectedConfiguration;
 
         [Required]
         [ScriptAlias("Name")]
@@ -34,6 +36,14 @@ namespace Inedo.Extensions.Scripting.Operations.Python
         [ScriptAlias("Verbose")]
         [Description("When true, additional information about staging the script is written to the debug log.")]
         public bool Verbose { get; set; }
+        [Category("Logging")]
+        [ScriptAlias("OutputLogLevel")]
+        [DisplayName("Output log level")]
+        public MessageLevel OutputLevel { get; set; } = MessageLevel.Information;
+        [Category("Logging")]
+        [ScriptAlias("ErrorOutputLogLevel")]
+        [DisplayName("Error log level")]
+        public MessageLevel ErrorLevel { get; set; } = MessageLevel.Error;
         [ScriptAlias("SuccessExitCode")]
         [DisplayName("Success exit code")]
         [Description("Integer exit code which indicates no error. When not specified, the exit code is ignored. This can also be an integer prefixed with an inequality operator.")]
@@ -41,12 +51,6 @@ namespace Inedo.Extensions.Scripting.Operations.Python
         [Example("SuccessExitCode: >= 0 # Fail on negative numbers.")]
         [DefaultValue("ignored")]
         public string SuccessExitCode { get; set; }
-        [Category("Advanced")]
-        [ScriptAlias("PythonPath")]
-        [DefaultValue("$PythonPath")]
-        [DisplayName("Python path")]
-        [Description("Full path to python/python.exe on the target server.")]
-        public string PythonPath { get; set; }
         [Category("Advanced")]
         [ScriptAlias("CaptureDebug")]
         [DisplayName("Capture debug messages")]
@@ -62,21 +66,29 @@ namespace Inedo.Extensions.Scripting.Operations.Python
         [DisplayName("Environment variables")]
         public IReadOnlyDictionary<string, string> EnvironmentVariables { get; set; }
 
-        ScriptLanguageInfo IScriptingOperation.ScriptLanguage => new PythonScriptLanguage();
+       ScriptLanguageInfo IScriptingOperation.ScriptLanguage => new ShellScriptingLanguage();
 
         public override async Task<PersistedConfiguration> CollectAsync(IOperationCollectionContext context)
         {
-            var result = await this.ExecutePythonScriptAhAsync(context, "Collect");
+            var result = await this.ExecuteShellScriptAhAsync(context, "Collect");
             if (context.Simulation)
                 return null;
 
-            this.collectedConfiguration = new PYPersistedConfiguration(result);
+            this.collectedConfiguration = new SHPersistedConfiguration(result);
             return this.collectedConfiguration;
         }
         public override PersistedConfiguration GetConfigurationTemplate() => this.collectedConfiguration;
         public override Task StoreConfigurationStatusAsync(PersistedConfiguration actual, ComparisonResult results, ConfigurationPersistenceContext context)
         {
             return this.collectedConfiguration.StoreConfigurationStatusAsync(context);
+        }
+        public override async Task ConfigureAsync(IOperationExecutionContext context)
+        {
+            if (context.Simulation)
+                return;
+
+            var result = await this.ExecuteShellScriptAhAsync(context, "Configure");
+            this.collectedConfiguration = new SHPersistedConfiguration(result);
         }
 
         protected override ExtendedRichDescription GetDescription(IOperationConfiguration config)
@@ -85,18 +97,18 @@ namespace Inedo.Extensions.Scripting.Operations.Python
             {
                 return new ExtendedRichDescription(
                     new RichDescription(
-                        "Verify ",
+                        "Ensure ",
                         new Hilite(config[nameof(this.ScriptName)])
                     ),
-                    new RichDescription("using Python")
+                    new RichDescription("using Shell")
                 );
             }
             else
             {
                 return new ExtendedRichDescription(
                     new RichDescription(
-                        "Verify ",
-                        new Hilite("Python")
+                        "Ensure ",
+                        new Hilite("Shell")
                     )
                 );
             }

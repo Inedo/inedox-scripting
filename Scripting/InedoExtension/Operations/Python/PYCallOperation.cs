@@ -7,7 +7,7 @@ using Inedo.ExecutionEngine;
 using Inedo.Extensibility;
 using Inedo.Extensibility.Operations;
 using Inedo.Extensibility.ScriptLanguages;
-using Inedo.Extensions.Scripting.ScriptLanguages;
+using Inedo.Extensions.Scripting.ScriptLanguages.Python;
 using Inedo.Extensions.Scripting.SuggestionProviders;
 using Inedo.Web;
 
