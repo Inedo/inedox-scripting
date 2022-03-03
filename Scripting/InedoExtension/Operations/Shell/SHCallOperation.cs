@@ -14,6 +14,7 @@ using Inedo.Web;
 
 namespace Inedo.Extensions.Scripting.Operations.Shell
 {
+    [Tag("shell")]
     [DisplayName("SHCall")]
     [Description("Calls a shell script that is stored as an asset.")]
     [ScriptAlias("SHCall")]

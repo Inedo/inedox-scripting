@@ -11,6 +11,7 @@ using Inedo.Web;
 
 namespace Inedo.Extensions.Scripting.Operations.Shell
 {
+    [Tag("shell")]
     [DisplayName("Execute Shell Script")]
     [Description("Executes a specified shell script.")]
     [ScriptAlias("SHExec")]

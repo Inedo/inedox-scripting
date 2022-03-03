@@ -341,6 +341,11 @@ namespace Inedo.Extensions.Scripting.Operations.Shell
             else if (!string.IsNullOrWhiteSpace(scriptInfo.DefaultArgumentsFormat))
                 commandLineArgs = (await context.ExpandVariablesAsync(scriptInfo.DefaultArgumentsFormat, argVars)).AsString();
 
+            if (!string.IsNullOrEmpty(operation.Arguments))
+            {
+                commandLineArgs += string.IsNullOrEmpty(commandLineArgs) ? $"{operation.Arguments}" : $" {operation.Arguments}";
+            }
+
             if (operation.InputVariables != null)
             {
                 foreach (var v in operation.InputVariables)
