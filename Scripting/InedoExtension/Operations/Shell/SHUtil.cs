@@ -19,7 +19,6 @@ namespace Inedo.Extensions.Scripting.Operations.Shell
 
         /************************************ Legacy Methods ************************************/
         /*
-         * SHVerify
          * SHEnsure
          */
 
@@ -157,7 +156,6 @@ namespace Inedo.Extensions.Scripting.Operations.Shell
         
         public static async Task<ExecuteScriptResult> ExecuteShellScriptAsync(this IShellOperation operation, ShellStartInfo startInfo, IOperationExecutionContext context)
         {
-
             var outVars = startInfo.OutVariables?.ToArray();
 
             var fileOps = context.Agent.TryGetService<ILinuxFileOperationsExecuter>();
@@ -169,7 +167,6 @@ namespace Inedo.Extensions.Scripting.Operations.Shell
 
             var scriptsDirectory = fileOps.CombinePath(fileOps.GetBaseWorkingDirectory(), "scripts");
             await fileOps.CreateDirectoryAsync(scriptsDirectory).ConfigureAwait(false);
-
             var fileName = fileOps.CombinePath(scriptsDirectory, Guid.NewGuid().ToString("N"));
 
             try
@@ -189,7 +186,6 @@ namespace Inedo.Extensions.Scripting.Operations.Shell
                             await scriptWriter.WriteLineAsync($"{var.Key}=\"{var.Value}\"");
                         }
                     }
-
 
                     if (outVars?.Length > 0)
                     {
@@ -352,8 +348,7 @@ namespace Inedo.Extensions.Scripting.Operations.Shell
             if (!string.IsNullOrWhiteSpace(scriptInfo.ExecModeVariable))
                 inputVars.Add(scriptInfo.ExecModeVariable.TrimStart('$'), execMode);
 
-            var originalOutVars = operation.OutputVariables?.ToList();
-
+            var originalOutVars = operation.OutputVariables?.ToList() ?? new List<string>();
 
             if (operation.OutputVariables != null)
                 ahOutVars.UnionWith(operation.OutputVariables);
@@ -377,13 +372,13 @@ namespace Inedo.Extensions.Scripting.Operations.Shell
 
             var result = await operation.ExecuteShellScriptAsync(ahStartInfo, context);
 
-            var configResults = new List<ExecuteScriptResultConfigurationInfo>();
+            result.Configuration = new List<ExecuteScriptResultConfigurationInfo>();
 
             if (result.OutVariables != null)
             {
                 foreach (var c in scriptInfo.ConfigValues)
                 {
-                    configResults.Add(
+                    result.Configuration.Add(
                         new ExecuteScriptResultConfigurationInfo
                         {
                             ConfigKey = tryGetOutVar(c.ConfigKey),
@@ -394,28 +389,18 @@ namespace Inedo.Extensions.Scripting.Operations.Shell
                         }
                     );
                 }
-            }
-
-            result.Configuration = configResults;
-            if (result.OutVariables != null)
-            {
-                var outParamters = scriptInfo?.Parameters?.Where(p => p.Usage == ScriptParameterUsage.OutputVariable && ahOutVars.Contains(p.Name)).ToList();
-                if (outParamters != null)
+               
+                foreach (var outParam in scriptInfo?.Parameters?.Where(p => p.Usage == ScriptParameterUsage.OutputVariable && ahOutVars.Contains(p.Name)).ToList() ?? new List<ScriptParameterInfo>())
                 {
-                    if (originalOutVars == null)
-                        originalOutVars = new List<string>();
-                    foreach (var outParam in outParamters)
-                    {
-                        var param = operation.Parameters[outParam.Name];
-                        if (!result.OutVariables.ContainsKey(param.AsString()))
-                            result.OutVariables.Add(param.AsString(), result.OutVariables[outParam.Name]);
-                        if(!originalOutVars.Contains(param.AsString()))
-                            originalOutVars.Add(param.AsString());
-                    }
-                }
-                foreach (var v in ahOutVars.Except(originalOutVars?.AsEnumerable() ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase))
-                    result.OutVariables.Remove(v);
+                    var param = operation.Parameters[outParam.Name].AsString();
+                    result.OutVariables[param] = result.OutVariables[outParam.Name];
 
+                    if(!originalOutVars.Contains(param))
+                        originalOutVars.Add(param);
+                }
+
+                foreach (var v in ahOutVars.Except(originalOutVars, StringComparer.OrdinalIgnoreCase))
+                    result.OutVariables.Remove(v);
             }
 
             return result;
