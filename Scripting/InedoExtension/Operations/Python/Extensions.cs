@@ -156,6 +156,7 @@ namespace Inedo.Extensions.Scripting.Operations.Python
             var inputVars = new Dictionary<string, RuntimeValue>(StringComparer.OrdinalIgnoreCase);
             var envVars = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             var argVars = new Dictionary<string, RuntimeValue>(StringComparer.OrdinalIgnoreCase);
+            var ahOutVars = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             var scriptInfo = ScriptParser.Parse<PythonScriptParser>(scriptText);
 
@@ -170,6 +171,10 @@ namespace Inedo.Extensions.Scripting.Operations.Python
                         envVars[paramValue.Key] = paramValue.Value.AsString();
                     else if (paramInfo.Usage == ScriptParameterUsage.Arguments)
                         argVars[paramValue.Key] = paramValue.Value;
+                    else if (paramInfo.Usage == ScriptParameterUsage.OutputVariable)
+                        ahOutVars.Add(paramValue.Key);
+                    else
+                        throw new InvalidOperationException($"Parameter \"{paramValue.Key}\" contains an unsupported usage type: {paramInfo.Usage}.");
                 }
             }
 
@@ -195,9 +200,8 @@ namespace Inedo.Extensions.Scripting.Operations.Python
             if (!string.IsNullOrWhiteSpace(scriptInfo.ExecModeVariable))
                 inputVars.Add(scriptInfo.ExecModeVariable.TrimStart('$'), execMode);
 
-            var originalOutVars = operation.OutputVariables?.ToList();
+            var originalOutVars = operation.OutputVariables?.ToList() ?? new List<string>();
 
-            var ahOutVars = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             if (operation.OutputVariables != null)
                 ahOutVars.UnionWith(operation.OutputVariables);
 
@@ -221,13 +225,13 @@ namespace Inedo.Extensions.Scripting.Operations.Python
 
             var result = await operation.ExecutePythonScriptAsync(ahStartInfo, context);
 
-            var configResults = new List<ExecuteScriptResultConfigurationInfo>();
+            result.Configuration = new List<ExecuteScriptResultConfigurationInfo>();
 
             if (result.OutVariables != null)
             {
                 foreach (var c in scriptInfo.ConfigValues)
                 {
-                    configResults.Add(
+                    result.Configuration.Add(
                         new ExecuteScriptResultConfigurationInfo
                         {
                             ConfigKey = tryGetOutVar(c.ConfigKey),
@@ -238,12 +242,17 @@ namespace Inedo.Extensions.Scripting.Operations.Python
                         }
                     );
                 }
-            }
 
-            result.Configuration = configResults;
-            if (result.OutVariables != null)
-            {
-                foreach (var v in ahOutVars.Except(originalOutVars?.AsEnumerable() ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase))
+                foreach (var outParam in scriptInfo?.Parameters?.Where(p => p.Usage == ScriptParameterUsage.OutputVariable && ahOutVars.Contains(p.Name)).ToList() ?? new List<ScriptParameterInfo>())
+                {
+                    var param = operation.Parameters[outParam.Name].AsString();
+                    result.OutVariables[param] = result.OutVariables[outParam.Name];
+
+                    if (!originalOutVars.Contains(param))
+                        originalOutVars.Add(param);
+                }
+
+                foreach (var v in ahOutVars.Except(originalOutVars, StringComparer.OrdinalIgnoreCase))
                     result.OutVariables.Remove(v);
             }
 

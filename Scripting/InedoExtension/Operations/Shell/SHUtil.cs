@@ -150,7 +150,6 @@ namespace Inedo.Extensions.Scripting.Operations.Shell
          * SHEnsure2
          */
 
-
         private const int Octal755 = 493;
         private const string OutVarPrefix = "!|OtterScriptOutVars|!";
         
