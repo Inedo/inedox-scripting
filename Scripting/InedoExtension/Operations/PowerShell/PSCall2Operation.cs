@@ -33,6 +33,7 @@ PSCall2 hdars.ps1 (
   OutputVariables: @(MyOutputArg)
 );
 ")]
+    [DefaultProperty(nameof(ScriptName))]
     public sealed class PSCall2Operation : ExecuteOperation, IScriptingOperation
     {
         private PSProgressEventArgs currentProgress;
