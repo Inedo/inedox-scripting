@@ -16,7 +16,7 @@ namespace Inedo.Extensions.Scripting.ScriptLanguages.PowerShell
         public override string LanguageName => "PowerShell";
         public override string FileExtension => ".ps1";
         public override ScriptParameterUsage ParameterUsage => ScriptParameterUsage.InputVariable | ScriptParameterUsage.OutputVariable;
-        public override Type CallOperationType => typeof(PSCallOperation);
+        public override Type CallOperationType => typeof(PSCall2Operation);
         public override Type EnsureOperationType => typeof(PSEnsureOperation);
         public override Type VerifyOperationType => typeof(PSVerifyOperation);
         public override string SyntaxName => "powershell";
@@ -25,8 +25,8 @@ namespace Inedo.Extensions.Scripting.ScriptLanguages.PowerShell
         {
             string name;
 
-            if (scriptStatementInfo.OperationType == typeof(PSCallOperation))
-                name = "PSCall";
+            if (scriptStatementInfo.OperationType == typeof(PSCall2Operation))
+                name = "PSCall2";
             else if (scriptStatementInfo.OperationType == typeof(PSEnsureOperation))
                 name = "PSEnsure";
             else if (scriptStatementInfo.OperationType == typeof(PSVerifyOperation))
@@ -40,8 +40,8 @@ namespace Inedo.Extensions.Scripting.ScriptLanguages.PowerShell
         {
             Type type;
 
-            if (actionStatement.ActionName.Name.Equals("PSCall", StringComparison.OrdinalIgnoreCase))
-                type = typeof(PSCallOperation);
+            if (actionStatement.ActionName.Name.Equals("PSCall2", StringComparison.OrdinalIgnoreCase))
+                type = typeof(PSCall2Operation);
             else if (actionStatement.ActionName.Name.Equals("PSEnsure", StringComparison.OrdinalIgnoreCase))
                 type = typeof(PSEnsureOperation);
             else if (actionStatement.ActionName.Name.Equals("PSVerify", StringComparison.OrdinalIgnoreCase))
