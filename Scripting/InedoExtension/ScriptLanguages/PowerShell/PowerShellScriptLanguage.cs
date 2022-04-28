@@ -68,9 +68,9 @@ namespace Inedo.Extensions.Scripting.ScriptLanguages.PowerShell
                 return null;
 
             return new ScriptInfo(
-                parameters: info.Parameters.Select(Convert),
+                parameters: info.Parameters.Select(Convert).ToList(),
                 summary: info.Description,
-                configVariables: info.ConfigParameters?.Select(Convert),
+                configVariables: info.ConfigParameters?.Select(Convert)?.ToList(),
                 ahExecModeVariable: info.ExecutionModeVariableName
             );
         }
