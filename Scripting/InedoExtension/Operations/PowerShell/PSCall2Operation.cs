@@ -83,7 +83,7 @@ PSCall2 hdars.ps1 (
                 context: context,
                 fullScriptName: fullScriptName,
                 arguments: this.InputVariables,
-                outArguments: this.OutputVariables.ToDictionary(v => v, v => (RuntimeValue)default),
+                outArguments: (this.OutputVariables ?? Enumerable.Empty<string>()).ToDictionary(v => v, v => (RuntimeValue)default),
                 collectOutput: false,
                 progressUpdateHandler: (s, e) => Interlocked.Exchange(ref this.currentProgress, e)
             );
