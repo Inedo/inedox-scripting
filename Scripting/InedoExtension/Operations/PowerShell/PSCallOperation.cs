@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,6 +9,7 @@ using Inedo.ExecutionEngine;
 using Inedo.ExecutionEngine.Mapping;
 using Inedo.Extensibility;
 using Inedo.Extensibility.Operations;
+using Inedo.Extensibility.ScriptLanguages;
 using Inedo.Extensions.Scripting.PowerShell;
 using Inedo.Web.Editors.Operations;
 
@@ -29,13 +31,38 @@ pscall hdars (
   OutputArg => $MyVariable
 );
 ")]
-    public sealed class PSCallOperation : ExecuteOperation, ICustomArgumentMapper
+    public sealed class PSCallOperation : ExecuteOperation, ICustomArgumentMapper, IScriptingOperation
     {
         private PSProgressEventArgs currentProgress;
 
         public RuntimeValue DefaultArgument { get; set; }
         public IReadOnlyDictionary<string, RuntimeValue> NamedArguments { get; set; }
         public IDictionary<string, RuntimeValue> OutArguments { get; set; }
+
+        ScriptLanguageInfo IScriptingOperation.ScriptLanguage => new ScriptLanguages.PowerShell.PowerShellScriptLanguage();
+
+        string IScriptingOperation.ScriptName
+        {
+            get => this.DefaultArgument.AsString();
+            set => this.DefaultArgument = value;
+        }
+        string IScriptingOperation.Arguments
+        {
+            get => throw new NotSupportedException();
+            set => throw new NotSupportedException();
+        }
+        IReadOnlyDictionary<string, RuntimeValue> IScriptingOperation.InputVariables
+        {
+            get => this.NamedArguments;
+            set => this.NamedArguments = value;
+        }
+        IReadOnlyDictionary<string, string> IScriptingOperation.EnvironmentVariables
+        {
+            get => throw new NotSupportedException();
+            set => throw new NotSupportedException();
+        }
+        IEnumerable<string> IScriptingOperation.OutputVariables { get => throw new System.NotImplementedException(); set => throw new System.NotImplementedException(); }
+        IReadOnlyDictionary<string, RuntimeValue> IScriptingOperation.Parameters { get => throw new System.NotImplementedException(); set => throw new System.NotImplementedException(); }
 
         public override Task ExecuteAsync(IOperationExecutionContext context)
         {
