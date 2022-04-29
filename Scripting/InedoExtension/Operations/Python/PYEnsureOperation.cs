@@ -17,7 +17,7 @@ namespace Inedo.Extensions.Scripting.Operations.Python
     [ScriptAlias("PYEnsure")]
     [DefaultProperty(nameof(ScriptName))]
     [ScriptNamespace("Python", PreferUnqualified = true)]
-    [Description("Uses two Python scripts to Collect, and then Ensure a configuration about a server.")]
+    [Description("Uses a Python script asset to Collect, and then Ensure a configuration about a server.")]
     public sealed class PYEnsureOperation : EnsureOperation, IPythonOperation, IScriptingOperation
     {
         private PYPersistedConfiguration collectedConfiguration;

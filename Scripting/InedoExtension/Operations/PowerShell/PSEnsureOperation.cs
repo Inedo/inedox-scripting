@@ -16,6 +16,7 @@ namespace Inedo.Extensions.Scripting.Operations.PowerShell
     [DisplayName("PSEnsure")]
     [Description("Calls a PowerShell Ensure Script that is stored as an asset.")]
     [ScriptAlias("PSEnsure")]
+    [ScriptAlias("PSEnsure1")]
     [Tag("powershell")]
     [ScriptNamespace("PowerShell", PreferUnqualified = true)]
     [EditorBrowsable(EditorBrowsableState.Never)]

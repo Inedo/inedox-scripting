@@ -1,11 +1,11 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel;
-using System.Threading;
 using System.Threading.Tasks;
 using Inedo.Diagnostics;
 using Inedo.Documentation;
 using Inedo.ExecutionEngine;
 using Inedo.Extensibility;
+using Inedo.Extensibility.Configurations;
 using Inedo.Extensibility.Operations;
 using Inedo.Extensibility.ScriptLanguages;
 using Inedo.Extensions.Scripting.PowerShell;
@@ -15,26 +15,25 @@ using Inedo.Web.Editors.Operations;
 
 namespace Inedo.Extensions.Scripting.Operations.PowerShell
 {
-
-    [DisplayName("PSCall2")]
-    [Description("Calls a PowerShell Script that is stored as an asset.")]
-    [ScriptAlias("PSCall2")]
+    [DisplayName("PSEnsure2")]
+    [Description("Calls a PowerShell Ensure Script that is stored as an asset.")]
+    [ScriptAlias("PSEnsure2")]
     [Tag("powershell")]
     [ScriptNamespace("PowerShell", PreferUnqualified = true)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     [UsesCallScriptEditor(typeof(PowerShellScriptInfoProvider))]
-    [Note("An argument may be explicitly converted to an integral type by prefixing the value with [type::<typeName>], where <typeName> is one of: int, uint, long, ulong, double, decimal. Normally this conversion is performed automatically and this is not necessary.")]
     [Example(@"
-# execute the hdars.ps1 script, passing Argument1 and Aaaaaarg2 as input variables, and capturing the value of OutputArg as $OutputArg 
-PSCall2 hdars.ps1 (
-  InputVariables: %(Argument1: hello, Aaaaaarg2: World),
-  OutputVariables: @(MyOutputArg)
+# execute the EnsureLocalAdmin.ps1 ensure script
+PSEnsure EnsureLocalAdmin.ps1
+(
+  Parameters: %(User: $PSCredential(defaultAdminAccount), Enabled: false)
 );
 ")]
     [DefaultProperty(nameof(ScriptName))]
-    public sealed class PSCall2Operation : ExecuteOperation, IPSScriptingOperation
+    public sealed class PSEnsure2Operation : EnsureOperation, IPSScriptingOperation
     {
-        private PSProgressEventArgs currentProgress;
+        private PSPersistedConfiguration collectedConfiguration;
+        private volatile PSProgressEventArgs currentProgress;
 
         ScriptLanguageInfo IScriptingOperation.ScriptLanguage => new ScriptLanguages.PowerShell.PowerShellScriptLanguage();
 
@@ -54,27 +53,45 @@ PSCall2 hdars.ps1 (
         string IScriptingOperation.Arguments { get => throw new System.NotImplementedException(); set => throw new System.NotImplementedException(); }
         IReadOnlyDictionary<string, string> IScriptingOperation.EnvironmentVariables { get => throw new System.NotImplementedException(); set => throw new System.NotImplementedException(); }
 
-        public override Task ExecuteAsync(IOperationExecutionContext context)
+        public override async Task<PersistedConfiguration> CollectAsync(IOperationCollectionContext context)
         {
             if (context.Simulation)
             {
                 this.LogInformation("Executing PowerShell Script...");
-                return Complete;
+                return null;
             }
 
-            var fullScriptName = this.ScriptName;
-            if (fullScriptName == null || !fullScriptName.EndsWith(".ps1"))
-            {
-                this.LogError("Bad or missing script name.");
-                return Complete;
-            }
-
-            return PSUtil2.ExecuteScript2Async(
+            var result = await PSUtil2.ExecuteScript2Async(
                 operation: this,
                 context: context,
-                collectOutput: false,
-                progressUpdateHandler: (s, e) => Interlocked.Exchange(ref this.currentProgress, e)
+                collectOutput: true,
+                progressUpdateHandler: (s, e) => this.currentProgress = e,
+                executionMode: PsExecutionMode.Collect
             );
+
+            this.collectedConfiguration = new PSPersistedConfiguration(result);
+            return this.collectedConfiguration;
+        }
+        public override PersistedConfiguration GetConfigurationTemplate() => this.collectedConfiguration;
+        public override Task StoreConfigurationStatusAsync(PersistedConfiguration actual, ComparisonResult results, ConfigurationPersistenceContext context)
+            => this.collectedConfiguration.StoreConfigurationStatusAsync(context);
+
+        public override async Task ConfigureAsync(IOperationExecutionContext context)
+        {
+            if (context.Simulation)
+            {
+                this.LogInformation("Executing PowerShell Script...");
+                return;
+            }
+
+            var result = await PSUtil2.ExecuteScript2Async(
+                operation: this,
+                context: context,
+                collectOutput: true,
+                progressUpdateHandler: (s, e) => this.currentProgress = e,
+                executionMode: PsExecutionMode.Configure
+            );
+            this.collectedConfiguration = new PSPersistedConfiguration(result);
         }
         public override OperationProgress GetProgress()
         {
@@ -122,7 +139,7 @@ PSCall2 hdars.ps1 (
                 longDesc.AppendContent("with no parameters");
 
             return new ExtendedRichDescription(
-                new RichDescription("PSCall2 ", new Hilite(scriptName)),
+                new RichDescription("PSEnsure2 ", new Hilite(scriptName)),
                 longDesc
             );
         }
