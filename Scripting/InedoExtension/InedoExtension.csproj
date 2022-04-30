@@ -9,12 +9,14 @@
     <OutputType>Library</OutputType>
   </PropertyGroup>
   <ItemGroup>
+    <None Remove="ScriptLanguages\PowerShell\powershell.svg" />
     <None Remove="ScriptLanguages\Shell\bash.svg" />
     <None Remove="ScriptLanguages\Batch\windows-batch.svg" />
     <None Remove="ScriptLanguages\Python\script-python.svg" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="ScriptLanguages\Batch\windows-batch.svg" />
+    <EmbeddedResource Include="ScriptLanguages\PowerShell\powershell.svg" />
     <EmbeddedResource Include="ScriptLanguages\Python\script-python.svg" />
     <EmbeddedResource Include="ScriptLanguages\Shell\bash.svg" />
   </ItemGroup>

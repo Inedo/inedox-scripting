@@ -16,8 +16,9 @@ namespace Inedo.Extensions.Scripting.PowerShell
         /// <param name="defaultValue">The default value of the parameter.</param>
         /// <param name="isBooleanOrSwitch">True if this is a boolean variable.</param>
         /// <param name="isOutput">True if this is an output variable.</param>
+        /// <param name="mandatory">True if this is a mandatory.</param>
         /// <exception cref="ArgumentNullException"><paramref name="name"/> is null or empty.</exception>
-        public PowerShellParameterInfo(string name, string description = null, string defaultValue = null, bool isBooleanOrSwitch = false, bool isOutput = false)
+        public PowerShellParameterInfo(string name, string description = null, string defaultValue = null, bool isBooleanOrSwitch = false, bool isOutput = false, bool mandatory = false)
         {
             if (string.IsNullOrEmpty(name))
                 throw new ArgumentNullException(nameof(name));
@@ -27,6 +28,7 @@ namespace Inedo.Extensions.Scripting.PowerShell
             this.DefaultValue = defaultValue;
             this.IsBooleanOrSwitch = isBooleanOrSwitch;
             this.IsOutput = isOutput;
+            this.Mandatory = mandatory;
         }
 
         /// <summary>
@@ -49,6 +51,10 @@ namespace Inedo.Extensions.Scripting.PowerShell
         /// Gets whether the parameter is an output parameter.
         /// </summary>
         public bool IsOutput { get; private set; }
+        /// <summary>
+        /// Gets whether the parameter is a mandatory parameter.
+        /// </summary>
+        public bool Mandatory { get; private set; }
 
         /// <summary>
         /// Returns a <see cref="System.String" /> that represents this instance.
