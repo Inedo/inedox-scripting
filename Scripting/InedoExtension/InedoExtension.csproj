@@ -19,7 +19,7 @@
     <EmbeddedResource Include="ScriptLanguages\Shell\bash.svg" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Inedo.SDK" Version="2.0.0-ci.12">
+    <PackageReference Include="Inedo.SDK" Version="2.0.0-ci.15">
       <ExcludeAssets>runtime</ExcludeAssets>
     </PackageReference>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />

@@ -9,7 +9,6 @@ using Inedo.ExecutionEngine.Mapping;
 using Inedo.Extensibility;
 using Inedo.Extensibility.Operations;
 using Inedo.Extensions.Scripting.PowerShell;
-using Inedo.Web.Editors.Operations;
 
 namespace Inedo.Extensions.Scripting.Operations.PowerShell
 {
@@ -19,7 +18,6 @@ namespace Inedo.Extensions.Scripting.Operations.PowerShell
     [Tag("powershell")]
     [ScriptNamespace("PowerShell", PreferUnqualified = true)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    [UsesCallScriptEditor(typeof(PowerShellScriptInfoProvider))]
     [Note("An argument may be explicitly converted to an integral type by prefixing the value with [type::<typeName>], where <typeName> is one of: int, uint, long, ulong, double, decimal. Normally this conversion is performed automatically and this is not necessary.")]
     [Example(@"
 # execute the hdars.ps1 script, passing Argument1 and Aaaaaarg2 as variables, and capturing the value of OutputArg as $MyVariable

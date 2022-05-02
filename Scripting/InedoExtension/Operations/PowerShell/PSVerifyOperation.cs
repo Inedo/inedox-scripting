@@ -9,7 +9,6 @@ using Inedo.Extensibility;
 using Inedo.Extensibility.Configurations;
 using Inedo.Extensibility.Operations;
 using Inedo.Extensions.Scripting.PowerShell;
-using Inedo.Web.Editors.Operations;
 
 namespace Inedo.Extensions.Scripting.Operations.PowerShell
 {
@@ -17,7 +16,6 @@ namespace Inedo.Extensions.Scripting.Operations.PowerShell
     [Description("Uses a PowerShell script to collect configuration about a server.")]
     [ScriptAlias("PSVerify")]
     [Tag(Tags.PowerShell)]
-    [UsesCallScriptEditor(typeof(PowerShellScriptInfoProvider))]
     [ScriptNamespace(Namespaces.PowerShell, PreferUnqualified = true)]
     public sealed class PSVerifyOperation : VerifyOperation, ICustomArgumentMapper
     {

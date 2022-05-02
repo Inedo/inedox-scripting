@@ -9,7 +9,6 @@ using Inedo.Extensibility;
 using Inedo.Extensibility.Configurations;
 using Inedo.Extensibility.Operations;
 using Inedo.Extensions.Scripting.PowerShell;
-using Inedo.Web.Editors.Operations;
 
 namespace Inedo.Extensions.Scripting.Operations.PowerShell
 {
@@ -19,7 +18,6 @@ namespace Inedo.Extensions.Scripting.Operations.PowerShell
     [Tag("powershell")]
     [ScriptNamespace("PowerShell", PreferUnqualified = true)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    [UsesCallScriptEditor(typeof(PowerShellScriptInfoProvider))]
     [Example(@"
 # execute the hdars.ps1 ensure script, passing Argument1 and Aaaaaarg2 as variables, and capturing the value of OutputArg as $MyVariable
 PSEnsure hdars (

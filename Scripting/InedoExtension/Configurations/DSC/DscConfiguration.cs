@@ -176,20 +176,12 @@ namespace Inedo.Extensions.Scripting.Configurations.DSC
 
             return d;
         }
-        [Obsolete("Use CompareAsync instead.")]
-        public override ComparisonResult Compare(PersistedConfiguration other)
-        {
-            bool inDesiredState = this.InDesiredState && other is DscConfiguration dsc && dsc.InDesiredState;
-
-            return inDesiredState ? ComparisonResult.Identical : new ComparisonResult(new[] { new Difference(nameof(InDesiredState), true, false) });
-        }
 
         public override Task<ComparisonResult> CompareAsync(PersistedConfiguration other, IOperationCollectionContext context)
         {
             bool inDesiredState = this.InDesiredState && other is DscConfiguration dsc && dsc.InDesiredState;
 
             return Task.FromResult(inDesiredState ? ComparisonResult.Identical : new ComparisonResult(new[] { new Difference(nameof(InDesiredState), true, false) }));
-            
         }
 
         internal Dictionary<string, RuntimeValue> ToPowerShellDictionary(Dictionary<string, RuntimeValueType> propertyTypes = null)
