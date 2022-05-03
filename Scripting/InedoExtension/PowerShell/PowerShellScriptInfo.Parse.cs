@@ -11,7 +11,7 @@ namespace Inedo.Extensions.Scripting.PowerShell
 {
     partial class PowerShellScriptInfo
     {
-        private static readonly LazyRegex DocumentationRegex = new LazyRegex(@"\s*\.(?<1>\S+)[ \t]*(?<2>[^\r\n]+)?\s*\n(?<3>(.(?!\n\.))+)", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Singleline | RegexOptions.ExplicitCapture);
+        private static readonly LazyRegex DocumentationRegex = new LazyRegex(@"\s*\.(?<1>\S+)[ \t]*(?<2>[^\r\n]+)?\s*\n(?<3>(.(?!\n\.))+)", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture);
         private static readonly LazyRegex SpaceCollapseRegex = new LazyRegex(@"\s*\n\s*", RegexOptions.Compiled | RegexOptions.Singleline);
         private static readonly LazyRegex ParameterTypeRegex = new LazyRegex(@"^\[?(?<1>[^\]]+)\]?$", RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.ExplicitCapture);
 
@@ -82,7 +82,8 @@ namespace Inedo.Extensions.Scripting.PowerShell
                             description: d.Select(t => t.Content).FirstOrDefault(),
                             defaultValue: p.DefaultValue,
                             isBooleanOrSwitch: p.IsBooleanOrSwitch,
-                            isOutput: p.IsOutput
+                            isOutput: p.IsOutput,
+                            mandatory: p.Mandatory
                         ),
                         StringComparer.OrdinalIgnoreCase).ToArray())
                 };
@@ -180,8 +181,10 @@ namespace Inedo.Extensions.Scripting.PowerShell
 
             bool expectDefaultValue = false;
 
-            foreach (var token in paramTokens)
+            for (int i = 0; i < paramTokens.Count; i++)
             {
+                var token = paramTokens[i];
+
                 if (token.Type == PSTokenType.Operator && token.Content != "=")
                 {
                     expectDefaultValue = false;
@@ -199,6 +202,36 @@ namespace Inedo.Extensions.Scripting.PowerShell
                     continue;
                 }
 
+                if (token.Type == PSTokenType.Attribute && token.Content.Equals("Parameter", StringComparison.OrdinalIgnoreCase))
+                {
+                    var groupCount = 0;
+                    for (int j = i + 1; j < paramTokens.Count; j++)
+                    {
+                        if (paramTokens[j].Type == PSTokenType.GroupStart)
+                            groupCount++;
+
+                        else if (paramTokens[j].Type == PSTokenType.GroupEnd)
+                            groupCount--;
+
+                        if (groupCount <= 0)
+                            break;
+
+                        if (paramTokens[j].Type == PSTokenType.Member && paramTokens[j].Content.Equals("Mandatory", StringComparison.OrdinalIgnoreCase))
+                            continue;
+
+                        currentParam.Mandatory = true;
+
+                        // just in case someone does Mandatory=$false
+                        if (!(paramTokens.Count < j + 2)
+                            && paramTokens[j + 1].Type == PSTokenType.Operator && paramTokens[j + 1].Content == "="
+                            && paramTokens[j + 2].Type == PSTokenType.Variable && !paramTokens[j + 2].Content.Equals("true", StringComparison.OrdinalIgnoreCase))
+                        {
+                            currentParam.Mandatory = false;
+                        }
+                    }
+
+                    continue;
+                }
                 if (token.Type == PSTokenType.Type)
                 {
                     var match = ParameterTypeRegex.Value.Match(token.Content ?? string.Empty);
@@ -224,6 +257,7 @@ namespace Inedo.Extensions.Scripting.PowerShell
             public string Name { get; set; }
             public string Type { get; set; }
             public string DefaultValue { get; set; }
+            public bool Mandatory { get; set; }
             public bool IsBooleanOrSwitch
             {
                 get

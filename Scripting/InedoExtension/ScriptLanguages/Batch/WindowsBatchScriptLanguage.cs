@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using Inedo.Documentation;
 using Inedo.Extensibility;
 using Inedo.Extensibility.RaftRepositories;
@@ -7,6 +8,8 @@ using Inedo.Extensions.Scripting.Operations.Batch;
 
 namespace Inedo.Extensions.Scripting.ScriptLanguages.Batch
 {
+    [DisplayName("Windows Batch")]
+    [Description("Parses additional headers in Windows batch scripts.")]
     public sealed class WindowsBatchScriptLanguage : ScriptLanguageInfo
     {
         public override string LanguageName => "Windows Batch";

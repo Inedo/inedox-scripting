@@ -4,59 +4,64 @@ using System.Threading.Tasks;
 using Inedo.Diagnostics;
 using Inedo.Documentation;
 using Inedo.ExecutionEngine;
-using Inedo.ExecutionEngine.Mapping;
 using Inedo.Extensibility;
 using Inedo.Extensibility.Configurations;
 using Inedo.Extensibility.Operations;
+using Inedo.Extensibility.ScriptLanguages;
 using Inedo.Extensions.Scripting.PowerShell;
+using Inedo.Extensions.Scripting.SuggestionProviders;
+using Inedo.Web;
 
 namespace Inedo.Extensions.Scripting.Operations.PowerShell
 {
-    [DisplayName("PSEnsure")]
+    [DisplayName("PSEnsure2")]
     [Description("Calls a PowerShell Ensure Script that is stored as an asset.")]
-    [ScriptAlias("PSEnsure")]
-    [ScriptAlias("PSEnsure1")]
+    [ScriptAlias("PSEnsure2")]
     [Tag("powershell")]
     [ScriptNamespace("PowerShell", PreferUnqualified = true)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     [Example(@"
-# execute the hdars.ps1 ensure script, passing Argument1 and Aaaaaarg2 as variables, and capturing the value of OutputArg as $MyVariable
-PSEnsure hdars (
-  Argument1: hello,
-  Aaaaaarg2: World,
-  OutputArg => $MyVariable
+# execute the EnsureLocalAdmin.ps1 ensure script
+PSEnsure EnsureLocalAdmin.ps1
+(
+  Parameters: %(User: $PSCredential(defaultAdminAccount), Enabled: false)
 );
 ")]
-    public sealed class PSEnsureOperation : EnsureOperation, ICustomArgumentMapper
+    [DefaultProperty(nameof(ScriptName))]
+    public sealed class PSEnsure2Operation : EnsureOperation, IPSScriptingOperation
     {
         private PSPersistedConfiguration collectedConfiguration;
         private volatile PSProgressEventArgs currentProgress;
 
-        public RuntimeValue DefaultArgument { get; set; }
-        public IReadOnlyDictionary<string, RuntimeValue> NamedArguments { get; set; }
-        public IDictionary<string, RuntimeValue> OutArguments { get; set; }
+        ScriptLanguageInfo IScriptingOperation.ScriptLanguage => new ScriptLanguages.PowerShell.PowerShellScriptLanguage();
+
+        [Required]
+        [ScriptAlias("Name")]
+        [DisplayName("Name")]
+        [Description("The name of the script asset.")]
+        [SuggestableValue(typeof(ScriptNameSuggestionProvider))]
+        public string ScriptName { get; set; }
+        [ScriptAlias("Parameters")]
+        public IReadOnlyDictionary<string, RuntimeValue> Parameters { get; set; }
+        [ScriptAlias("InputVariables")]
+        public IReadOnlyDictionary<string, RuntimeValue> InputVariables { get; set; }
+        [ScriptAlias("OutputVariables")]
+        public IEnumerable<string> OutputVariables { get; set; }
+
+        string IScriptingOperation.Arguments { get => throw new System.NotImplementedException(); set => throw new System.NotImplementedException(); }
+        IReadOnlyDictionary<string, string> IScriptingOperation.EnvironmentVariables { get => throw new System.NotImplementedException(); set => throw new System.NotImplementedException(); }
 
         public override async Task<PersistedConfiguration> CollectAsync(IOperationCollectionContext context)
         {
-            var scriptName = this.DefaultArgument.AsString();
-            if (string.IsNullOrWhiteSpace(scriptName))
-            {
-                this.LogError("Bad or missing script name.");
-                return null;
-            }
-
             if (context.Simulation)
             {
                 this.LogInformation("Executing PowerShell Script...");
                 return null;
             }
 
-            var result = await PSUtil.ExecuteScriptAssetAsync(
-                logger: this,
+            var result = await PSUtil2.ExecuteScript2Async(
+                operation: this,
                 context: context,
-                fullScriptName: scriptName,
-                arguments: this.NamedArguments,
-                outArguments: this.OutArguments,
                 collectOutput: true,
                 progressUpdateHandler: (s, e) => this.currentProgress = e,
                 executionMode: PsExecutionMode.Collect
@@ -71,25 +76,15 @@ PSEnsure hdars (
 
         public override async Task ConfigureAsync(IOperationExecutionContext context)
         {
-            var scriptName = this.DefaultArgument.AsString();
-            if (string.IsNullOrWhiteSpace(scriptName))
-            {
-                this.LogError("Bad or missing script name.");
-                return;
-            }
-
             if (context.Simulation)
             {
                 this.LogInformation("Executing PowerShell Script...");
                 return;
             }
 
-            var result = await PSUtil.ExecuteScriptAssetAsync(
-                logger: this,
+            var result = await PSUtil2.ExecuteScript2Async(
+                operation: this,
                 context: context,
-                fullScriptName: scriptName,
-                arguments: this.NamedArguments,
-                outArguments: this.OutArguments,
                 collectOutput: true,
                 progressUpdateHandler: (s, e) => this.currentProgress = e,
                 executionMode: PsExecutionMode.Configure
@@ -104,17 +99,17 @@ PSEnsure hdars (
 
         protected override ExtendedRichDescription GetDescription(IOperationConfiguration config)
         {
-            if (string.IsNullOrWhiteSpace(config.DefaultArgument))
-                return new ExtendedRichDescription(new RichDescription("PSEnsure {error parsing statement}"));
+            var scriptName = config[nameof(IPSScriptingOperation.ScriptName)].ToString() ?? config.DefaultArgument;
+            if (string.IsNullOrWhiteSpace(scriptName))
+                return new ExtendedRichDescription(new RichDescription("PSVerify2 {error parsing statement}"));
 
-            var defaultArg = config.DefaultArgument;
             var longDesc = new RichDescription();
 
             bool longDescInclused = false;
-            var scriptName = LooselyQualifiedName.TryParse(defaultArg);
-            if (scriptName != null)
+            var parsedScriptName = LooselyQualifiedName.TryParse(scriptName);
+            if (parsedScriptName != null)
             {
-                var info = PowerShellScriptInfo.TryLoad(scriptName);
+                var info = PowerShellScriptInfo.TryLoad(parsedScriptName);
                 if (!string.IsNullOrEmpty(info?.Description))
                 {
                     longDesc.AppendContent(info.Description);
@@ -142,7 +137,7 @@ PSEnsure hdars (
                 longDesc.AppendContent("with no parameters");
 
             return new ExtendedRichDescription(
-                new RichDescription("PSEnsure ", new Hilite(defaultArg)),
+                new RichDescription("PSEnsure2 ", new Hilite(scriptName)),
                 longDesc
             );
         }

@@ -110,7 +110,7 @@ namespace Inedo.Extensions.Scripting.Operations.Shell
 
         protected override ExtendedRichDescription GetDescription(IOperationConfiguration config)
         {
-            var shortDesc = new RichDescription("SHCallNew ", new Hilite(config[nameof(this.ScriptName)]));
+            var shortDesc = new RichDescription("SHCall ", new Hilite(config[nameof(this.ScriptName)]));
             var args = config[nameof(this.Arguments)];
             if (string.IsNullOrWhiteSpace(args))
             {
