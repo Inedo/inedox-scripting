@@ -14,9 +14,9 @@ using Inedo.Web;
 
 namespace Inedo.Extensions.Scripting.Operations.PowerShell
 {
-
     [DisplayName("PSCall2")]
     [Description("Calls a PowerShell Script that is stored as an asset.")]
+    [ScriptAlias("PSCall")]
     [ScriptAlias("PSCall2")]
     [Tag("powershell")]
     [ScriptNamespace("PowerShell", PreferUnqualified = true)]

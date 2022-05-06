@@ -14,7 +14,6 @@ namespace Inedo.Extensions.Scripting.Operations.PowerShell
 {
     [DisplayName("PSVerify")]
     [Description("Uses a PowerShell script to collect configuration about a server.")]
-    [ScriptAlias("PSVerify")]
     [ScriptAlias("PSVerify1")]
     [Tag(Tags.PowerShell)]
     [ScriptNamespace(Namespaces.PowerShell, PreferUnqualified = true)]
