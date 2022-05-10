@@ -260,7 +260,9 @@ namespace Inedo.Extensions.Scripting.PowerShell
 
         private Runspace InitializeRunspace()
         {
-            var runspace = RunspaceFactory.CreateRunspace(this.pshost);
+            var sessionState = InitialSessionState.CreateDefault();
+            sessionState.ExecutionPolicy = Microsoft.PowerShell.ExecutionPolicy.Unrestricted;
+            var runspace = RunspaceFactory.CreateRunspace(this.pshost, sessionState);
             runspace.Open();
             return runspace;
         }
