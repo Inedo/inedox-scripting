@@ -39,6 +39,11 @@ namespace Inedo.Extensions.Scripting.Operations.PowerShell
         public IReadOnlyDictionary<string, RuntimeValue> InputVariables { get; set; }
         [ScriptAlias("OutputVariables")]
         public IEnumerable<string> OutputVariables { get; set; }
+        [DefaultValue(true)]
+        [ScriptAlias("PreferWindowsPowerShell")]
+        [DisplayName("Prefer Windows PowerShell")]
+        [Description("When true, the script will be run using Windows PowerShell 5.1 where available. When false or on Linux (or on Windows systems without PowerShell 5.1 installed), the script will be run using PowerShell Core instead.")]
+        public bool PreferWindowsPowerShell { get; set; } = true;
 
         string IScriptingOperation.Arguments { get => throw new System.NotImplementedException(); set => throw new System.NotImplementedException(); }
         IReadOnlyDictionary<string, string> IScriptingOperation.EnvironmentVariables { get => throw new System.NotImplementedException(); set => throw new System.NotImplementedException(); }
@@ -57,6 +62,7 @@ namespace Inedo.Extensions.Scripting.Operations.PowerShell
                 operation: this,
                 context: context,
                 collectOutput: true,
+                preferWindowsPowerShell: this.PreferWindowsPowerShell,
                 progressUpdateHandler: (s, e) => this.currentProgress = e,
                 executionMode: PsExecutionMode.Collect
             );

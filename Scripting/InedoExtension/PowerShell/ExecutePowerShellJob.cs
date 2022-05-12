@@ -25,6 +25,7 @@ namespace Inedo.Extensions.Scripting.PowerShell
         public string[] OutVariables { get; set; }
         public bool Isolated { get; set; }
         public string WorkingDirectory { get; set; }
+        public bool PreferWindowsPowerShell { get; set; }
 
         public override async Task<object> ExecuteAsync(CancellationToken cancellationToken)
         {
@@ -46,6 +47,7 @@ namespace Inedo.Extensions.Scripting.PowerShell
             writer.Write(this.LogOutput);
             writer.Write(this.Isolated);
             writer.Write(this.WorkingDirectory ?? string.Empty);
+            writer.Write(this.PreferWindowsPowerShell);
 
             WriteDictionary(writer, this.Variables);
             WriteDictionary(writer, this.Parameters);
@@ -64,6 +66,7 @@ namespace Inedo.Extensions.Scripting.PowerShell
             this.LogOutput = reader.ReadBoolean();
             this.Isolated = reader.ReadBoolean();
             this.WorkingDirectory = reader.ReadString();
+            this.PreferWindowsPowerShell = reader.ReadBoolean();
 
             this.Variables = ReadDictionary(reader);
             this.Parameters = ReadDictionary(reader);
@@ -222,6 +225,7 @@ namespace Inedo.Extensions.Scripting.PowerShell
             r.CollectOutput = this.CollectOutput;
             r.DebugLogging = this.DebugLogging;
             r.VerboseLogging = this.VerboseLogging;
+            r.PreferWindowsPowerShell = this.PreferWindowsPowerShell;
 
             return r;
         }
@@ -233,12 +237,13 @@ namespace Inedo.Extensions.Scripting.PowerShell
             public Dictionary<string, RuntimeValue> OutVariables { get; set; }
         }
 
-        private sealed class StandardRunner : IPowerShellRunner
+        private sealed class StandardRunner : IPowerShellRunner, IPowerShellRunnerFactory
         {
             public bool LogOutput { get; set; }
             public bool CollectOutput { get; set; }
             public bool DebugLogging { get; set; }
             public bool VerboseLogging { get; set; }
+            public bool PreferWindowsPowerShell { get; set; }
 
             public event EventHandler<PowerShellOutputEventArgs> OutputReceived;
             public event EventHandler<LogMessageEventArgs> MessageLogged;
@@ -246,7 +251,7 @@ namespace Inedo.Extensions.Scripting.PowerShell
 
             public async Task<Result> ExecuteAsync(string script, Dictionary<string, RuntimeValue> variables, Dictionary<string, RuntimeValue> parameters, string[] outVariables, string workingDirectory, CancellationToken cancellationToken)
             {
-                using var runner = new PowerShellScriptRunner { DebugLogging = this.DebugLogging, VerboseLogging = this.VerboseLogging };
+                using var runner = ((IPowerShellRunnerFactory)this).CreateRunner();
                 var outputData = new List<RuntimeValue>();
 
                 runner.MessageLogged += (s, e) => this.MessageLogged?.Invoke(this, e);

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Threading.Tasks;
 using Inedo.Agents;
 using Inedo.Documentation;
 using Inedo.ExecutionEngine;
@@ -24,16 +25,18 @@ set $NextYear = $PSEval($PowershellScript);
 Log-Information $NextYear;
 ")]
     [Category("PowerShell")]
-    public sealed partial class PSEvalVariableFunction : VariableFunction
+    public sealed partial class PSEvalVariableFunction : VariableFunction, IAsyncVariableFunction
     {
         [DisplayName("script")]
         [VariableFunctionParameter(0)]
         [Description("The PowerShell script to execute. This should be an expression.")]
         public string ScriptText { get; set; }
 
-        public override RuntimeValue Evaluate(IVariableFunctionContext context)
+        public override RuntimeValue Evaluate(IVariableFunctionContext context) => throw new NotImplementedException();
+
+        public async ValueTask<RuntimeValue> EvaluateAsync(IVariableFunctionContext context)
         {
-            if (!(context is IOperationExecutionContext execContext))
+            if (context is not IOperationExecutionContext execContext)
                 throw new NotSupportedException("This function can currently only be used within an execution.");
 
             var job = new ExecutePowerShellJob
@@ -43,8 +46,8 @@ Log-Information $NextYear;
                 Variables = PowerShellScriptRunner.ExtractVariables(this.ScriptText, execContext)
             };
 
-            var jobExecuter = execContext.Agent.GetService<IRemoteJobExecuter>();
-            var result = (ExecutePowerShellJob.Result)jobExecuter.ExecuteJobAsync(job, execContext.CancellationToken).GetAwaiter().GetResult();
+            var jobExecuter = await execContext.Agent.GetServiceAsync<IRemoteJobExecuter>().ConfigureAwait(false);
+            var result = (ExecutePowerShellJob.Result)await jobExecuter.ExecuteJobAsync(job, execContext.CancellationToken).ConfigureAwait(false);
 
             if (result.Output.Count == 1)
                 return result.Output[0];

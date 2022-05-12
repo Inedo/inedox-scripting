@@ -11,14 +11,15 @@ using Inedo.Diagnostics;
 using Inedo.ExecutionEngine;
 using Inedo.Extensibility.Operations;
 using Inedo.IO;
+using Microsoft.Win32;
 
 namespace Inedo.Extensions.Scripting.PowerShell
 {
     internal class PowerShellScriptRunner : ILogger, IDisposable
     {
-        public static readonly LazyRegex TypeCastRegex = new LazyRegex(@"^\[type::(?<1>[^\]]+)\](?<2>.+)$", RegexOptions.Compiled | RegexOptions.ExplicitCapture);
-        private static readonly LazyRegex VariableRegex = new LazyRegex(@"(?>\$(?<1>[a-zA-Z0-9_]+)|\${(?<2>[^}]+)})", RegexOptions.Compiled | RegexOptions.ExplicitCapture);
-        private readonly InedoPSHost pshost = new InedoPSHost();
+        public static readonly LazyRegex TypeCastRegex = new(@"^\[type::(?<1>[^\]]+)\](?<2>.+)$", RegexOptions.Compiled | RegexOptions.ExplicitCapture);
+        private static readonly LazyRegex VariableRegex = new(@"(?>\$(?<1>[a-zA-Z0-9_]+)|\${(?<2>[^}]+)})", RegexOptions.Compiled | RegexOptions.ExplicitCapture);
+        private readonly InedoPSHost pshost = new();
         private readonly Lazy<Runspace> runspaceFactory;
         private bool disposed;
 
@@ -35,6 +36,7 @@ namespace Inedo.Extensions.Scripting.PowerShell
         public Runspace Runspace => this.runspaceFactory.Value;
         public bool DebugLogging { get; set; }
         public bool VerboseLogging { get; set; }
+        public bool PreferWindowsPowerShell { get; set; }
 
         public static Dictionary<string, RuntimeValue> ExtractVariables(string script, IOperationExecutionContext context)
         {
@@ -260,11 +262,46 @@ namespace Inedo.Extensions.Scripting.PowerShell
 
         private Runspace InitializeRunspace()
         {
-            var sessionState = InitialSessionState.CreateDefault();
-            sessionState.ExecutionPolicy = Microsoft.PowerShell.ExecutionPolicy.Unrestricted;
-            var runspace = RunspaceFactory.CreateRunspace(this.pshost, sessionState);
+            Runspace runspace = null;
+
+            if (this.PreferWindowsPowerShell)
+            {
+                if (HasWindowsPowerShell51())
+                {
+                    runspace = RunspaceFactory.CreateOutOfProcessRunspace(null, new PowerShellProcessInstance(new Version(5, 1), null, null, false));
+                    this.LogDebug("Using Windows PowerShell 5.1...");
+                }
+                else if (OperatingSystem.IsWindows())
+                {
+                    this.LogWarning("PreferWindowsPowerShell is specified, but Windows PowerShell 5.1 is not available on this server. Falling back to PSCore.");
+                }
+                else
+                {
+                    this.LogDebug("Using PowerShell Core...");
+                }
+            }
+            else
+            {
+                this.LogDebug("Using PowerShell Core...");
+            }
+
+            runspace ??= RunspaceFactory.CreateRunspace(this.pshost);
             runspace.Open();
             return runspace;
+        }
+
+        private static bool HasWindowsPowerShell51()
+        {
+            if (OperatingSystem.IsWindows())
+            {
+                // this is how System.Management.Automation checks for Windows PowerShell
+                using var key = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\PowerShell\3\PowerShellEngine");
+                return key.GetValue("PowerShellVersion") is string s && s.StartsWith("5.1");
+            }
+            else
+            {
+                return false;
+            }
         }
 
         private static RuntimeValue? TryGetFunctionValue(RuntimeVariableName functionName, IOperationExecutionContext context)

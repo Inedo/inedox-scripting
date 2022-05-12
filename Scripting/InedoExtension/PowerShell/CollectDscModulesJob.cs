@@ -11,10 +11,11 @@ using Inedo.Serialization;
 
 namespace Inedo.Extensions.Scripting.PowerShell
 {
-    internal sealed class CollectDscModulesJob : RemoteJob
+    internal sealed class CollectDscModulesJob : RemoteJob, IPowerShellRunnerFactory
     {
         public bool DebugLogging { get; set; }
         public bool VerboseLogging { get; set; }
+        public bool PreferWindowsPowerShell { get; set; }
         public bool LogOutput { get; set; }
 
         public override void Serialize(Stream stream)
@@ -23,6 +24,7 @@ namespace Inedo.Extensions.Scripting.PowerShell
             writer.Write(this.DebugLogging);
             writer.Write(this.VerboseLogging);
             writer.Write(this.LogOutput);
+            writer.Write(this.PreferWindowsPowerShell);
         }
         public override void Deserialize(Stream stream)
         {
@@ -30,11 +32,12 @@ namespace Inedo.Extensions.Scripting.PowerShell
             this.DebugLogging = reader.ReadBoolean();
             this.VerboseLogging = reader.ReadBoolean();
             this.LogOutput = reader.ReadBoolean();
+            this.PreferWindowsPowerShell = reader.ReadBoolean();
         }
 
         public override async Task<object> ExecuteAsync(CancellationToken cancellationToken)
         {
-            using (var runner = new PowerShellScriptRunner { DebugLogging = this.DebugLogging, VerboseLogging = this.VerboseLogging })
+            using (var runner = ((IPowerShellRunnerFactory)this).CreateRunner())
             {
                 runner.MessageLogged += (s, e) => this.Log(e.Level, e.Message);
                 if (this.LogOutput)

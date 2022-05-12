@@ -7,7 +7,7 @@ namespace Inedo.Extensions.Scripting.PowerShell
 {
     internal sealed class InedoPSHost : PSHost, ILogger
     {
-        private readonly InedoPSHostUserInterface ui = new InedoPSHostUserInterface();
+        private readonly InedoPSHostUserInterface ui = new();
 
         public InedoPSHost()
         {

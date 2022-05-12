@@ -258,7 +258,7 @@ namespace Inedo.Extensions.Scripting.Configurations.PsModule
                 LogOutput = template.Verbose,
                 ScriptText = scriptText,
                 Variables = variables,
-            
+                PreferWindowsPowerShell = true
             };            
             
             log.LogDebug(job.ScriptText);
@@ -301,7 +301,8 @@ namespace Inedo.Extensions.Scripting.Configurations.PsModule
                     Variables = new Dictionary<string, RuntimeValue>(StringComparer.OrdinalIgnoreCase)
                     {
                         ["Name"] = template.ModuleName
-                    }
+                    },
+                    PreferWindowsPowerShell = true
                 };
                 log.LogDebug(job.ScriptText);
                 job.MessageLogged += (s, e) => {

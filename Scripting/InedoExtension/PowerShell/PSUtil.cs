@@ -31,7 +31,7 @@ namespace Inedo.Extensions.Scripting.PowerShell
 
             return ExecuteScriptDirectAsync(logger, context, scriptText, arguments, outArguments, collectOutput, progressUpdateHandler, successExitCode, executionMode, fullScriptName);
         }
-        public static async Task<ExecuteScriptResult> ExecuteScriptDirectAsync(ILogSink logger, IOperationExecutionContext context, string scriptText, IReadOnlyDictionary<string, RuntimeValue> arguments, IDictionary<string, RuntimeValue> outArguments, bool collectOutput, EventHandler<PSProgressEventArgs> progressUpdateHandler, string successExitCode = null, PsExecutionMode executionMode = PsExecutionMode.Normal, string fullScriptName = null)
+        public static async Task<ExecuteScriptResult> ExecuteScriptDirectAsync(ILogSink logger, IOperationExecutionContext context, string scriptText, IReadOnlyDictionary<string, RuntimeValue> arguments, IDictionary<string, RuntimeValue> outArguments, bool collectOutput, EventHandler<PSProgressEventArgs> progressUpdateHandler, string successExitCode = null, PsExecutionMode executionMode = PsExecutionMode.Normal, string fullScriptName = null, bool preferWindowsPowerShell = true)
         {
             var variables = new Dictionary<string, RuntimeValue>();
             var parameters = new Dictionary<string, RuntimeValue>();
@@ -109,7 +109,8 @@ namespace Inedo.Extensions.Scripting.PowerShell
                 Variables = variables,
                 Parameters = parameters,
                 OutVariables = outArguments.Keys.ToArray(),
-                WorkingDirectory = context.WorkingDirectory
+                WorkingDirectory = context.WorkingDirectory,
+                PreferWindowsPowerShell = preferWindowsPowerShell
             };
 
             job.MessageLogged += (s, e) => logger.Log(e.Level, e.Message);

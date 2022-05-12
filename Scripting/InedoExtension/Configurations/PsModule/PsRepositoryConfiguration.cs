@@ -182,7 +182,7 @@ namespace Inedo.Extensions.Scripting.Configurations.PsModule
                     LogOutput = template.Verbose,
                     ScriptText = scriptText,
                     Variables = variables,
-
+                    PreferWindowsPowerShell = true
                 };
 
                 log.LogDebug(job.ScriptText);
@@ -227,7 +227,7 @@ namespace Inedo.Extensions.Scripting.Configurations.PsModule
                     LogOutput = template.Verbose,
                     ScriptText = scriptText,
                     Variables = variables,
-
+                    PreferWindowsPowerShell = true
                 };
 
                 log.LogDebug(job.ScriptText);
@@ -264,7 +264,8 @@ namespace Inedo.Extensions.Scripting.Configurations.PsModule
                     Variables = new Dictionary<string, RuntimeValue>(StringComparer.OrdinalIgnoreCase)
                     {
                         ["Name"] = template.Name
-                    }
+                    },
+                    PreferWindowsPowerShell = true
                 };
                 job.MessageLogged += (s, e) => {
                     if (e.Message.Contains("No match was found for the specified"))

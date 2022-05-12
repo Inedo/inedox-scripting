@@ -15,7 +15,7 @@ namespace Inedo.Extensions.Scripting.Operations.PowerShell
 {
     internal static class Dsc
     {
-        private static readonly LazyRegex IsArrayPropertyRegex = new LazyRegex(@"^\[[^\[\]]+\[\]\]$", RegexOptions.Compiled);
+        private static readonly LazyRegex IsArrayPropertyRegex = new(@"^\[[^\[\]]+\[\]\]$", RegexOptions.Compiled);
 
         public static async Task<PersistedConfiguration> CollectAsync(IOperationCollectionContext context, ILogSink log, DscConfiguration template)
         {
@@ -113,7 +113,8 @@ Write-Output $h",
                 {
                     ["Name"] = resourceName,
                     ["ModuleName"] = AH.CoalesceString(moduleName, "PSDesiredStateConfiguration")
-                }
+                },
+                PreferWindowsPowerShell = true
             };
 
             job.MessageLogged += (s, e) => log.Log(e.Level, e.Message);
@@ -145,7 +146,8 @@ Write-Output $h",
                     ["Name"] = template.ResourceName,
                     ["Property"] = new RuntimeValue(template.ToPowerShellDictionary(propertyTypes)),
                     ["ModuleName"] = AH.CoalesceString(template.ModuleName, "PSDesiredStateConfiguration")
-                }
+                },
+                PreferWindowsPowerShell = true
             };
 
             return job;

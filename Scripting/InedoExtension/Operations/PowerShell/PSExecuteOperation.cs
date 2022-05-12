@@ -72,6 +72,12 @@ psexec >>
         [Example("SuccessExitCode: >= 0 # Fail on negative numbers.")]
         public string SuccessExitCode { get; set; }
 
+        [DefaultValue(true)]
+        [ScriptAlias("PreferWindowsPowerShell")]
+        [DisplayName("Prefer Windows PowerShell")]
+        [Description("When true, the script will be run using Windows PowerShell 5.1 where available. When false or on Linux (or on Windows systems without PowerShell 5.1 installed), the script will be run using PowerShell Core instead.")]
+        public bool PreferWindowsPowerShell { get; set; } = true;
+
         public override async Task ExecuteAsync(IOperationExecutionContext context)
         {
             if (context.Simulation && !this.RunOnSimulation)
@@ -91,7 +97,8 @@ psexec >>
                 LogOutput = true,
                 Variables = PowerShellScriptRunner.ExtractVariables(this.ScriptText, context),
                 Isolated = this.Isolated,
-                WorkingDirectory = context.WorkingDirectory
+                WorkingDirectory = context.WorkingDirectory,
+                PreferWindowsPowerShell = this.PreferWindowsPowerShell
             };
 
             job.MessageLogged += (s, e) => this.Log(e.Level, e.Message);

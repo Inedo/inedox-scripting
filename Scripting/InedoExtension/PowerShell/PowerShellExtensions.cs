@@ -41,6 +41,14 @@ namespace Inedo.Extensions.Scripting.PowerShell
                     if (rubbish != null)
                         logger.LogError(rubbish.ToString());
                 };
+
+            streams.Information.DataAdded +=
+                (s, e) =>
+                {
+                    var rubbish = streams.Information[e.Index];
+                    if (rubbish != null)
+                        logger.LogInformation(rubbish.ToString());
+                };
         }
     }
 }

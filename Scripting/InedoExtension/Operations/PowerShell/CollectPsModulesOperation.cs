@@ -31,7 +31,8 @@ namespace Inedo.Extensions.Scripting.Operations.PowerShell
             {
                 CollectOutput = true,
                 OutVariables = new[] { "results" },
-                ScriptText = scriptText
+                ScriptText = scriptText,
+                PreferWindowsPowerShell = true
             };
 
             var result = (ExecutePowerShellJob.Result)await jobRunner.ExecuteJobAsync(job);

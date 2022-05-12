@@ -14,10 +14,7 @@ namespace Inedo.Extensions.Scripting.PowerShell
 {
     internal static class PSUtil2
     {
-        public static async Task<ExecuteScriptResult> ExecuteScript2Async(
-            IPSScriptingOperation operation, IOperationExecutionContext context,
-            bool collectOutput, EventHandler<PSProgressEventArgs> progressUpdateHandler,
-            string successExitCode = null, PsExecutionMode executionMode = PsExecutionMode.Normal)
+        public static async Task<ExecuteScriptResult> ExecuteScript2Async(IPSScriptingOperation operation, IOperationExecutionContext context, bool collectOutput, EventHandler<PSProgressEventArgs> progressUpdateHandler, string successExitCode = null, PsExecutionMode executionMode = PsExecutionMode.Normal, bool preferWindowsPowerShell = true)
         {
             if (operation.ScriptName?.EndsWith(".ps1", StringComparison.OrdinalIgnoreCase) != true)
             {
@@ -123,7 +120,8 @@ namespace Inedo.Extensions.Scripting.PowerShell
                 Variables = psVariables,
                 Parameters = psParameters,
                 OutVariables = psOutVariables.ToArray(),
-                WorkingDirectory = context.WorkingDirectory
+                WorkingDirectory = context.WorkingDirectory,
+                PreferWindowsPowerShell = preferWindowsPowerShell
             };
 
             job.MessageLogged += (s, e) => operation.Log(e.Level, e.Message);

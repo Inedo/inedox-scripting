@@ -64,7 +64,7 @@ PSDsc cHdarsResource::cHdars (
         public override Task<PersistedConfiguration> CollectAsync(IOperationCollectionContext context) => Dsc.CollectAsync(context, this, this.Template);
         public override Task ConfigureAsync(IOperationExecutionContext context) => Dsc.ConfigureAsync(context, this, this.Template);
 
-        protected override ExtendedRichDescription GetDescription(IOperationConfiguration config) => new ExtendedRichDescription(new RichDescription("PSDsc"));
+        protected override ExtendedRichDescription GetDescription(IOperationConfiguration config) => new(new RichDescription("PSDsc"));
 
         private DscConfiguration CreateTemplate()
         {
