@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,6 +18,8 @@ namespace Inedo.Extensions.Scripting.PowerShell
 {
     internal class PowerShellScriptRunner : ILogger, IDisposable
     {
+        private const string OutVarPrefix = "!INEDO_VAR!";
+
         public static readonly LazyRegex TypeCastRegex = new(@"^\[type::(?<1>[^\]]+)\](?<2>.+)$", RegexOptions.Compiled | RegexOptions.ExplicitCapture);
         private static readonly LazyRegex VariableRegex = new(@"(?>\$(?<1>[a-zA-Z0-9_]+)|\${(?<2>[^}]+)})", RegexOptions.Compiled | RegexOptions.ExplicitCapture);
         private readonly InedoPSHost pshost = new();
@@ -181,6 +184,8 @@ namespace Inedo.Extensions.Scripting.PowerShell
             parameters ??= new Dictionary<string, RuntimeValue>();
             outVariables ??= new Dictionary<string, RuntimeValue>();
 
+            var outVarsSet = new HashSet<string>();
+
             var runspace = this.Runspace;
 
             var powerShell = System.Management.Automation.PowerShell.Create();
@@ -202,8 +207,26 @@ namespace Inedo.Extensions.Scripting.PowerShell
             output.DataAdded +=
                 (s, e) =>
                 {
-                    var rubbish = output[e.Index];
-                    this.OnOutputReceived(rubbish);
+                    var obj = output[e.Index];
+                    if (obj?.BaseObject is string value && value.StartsWith(OutVarPrefix) && value.Length > OutVarPrefix.Length)
+                    {
+                        var span = value.AsSpan(OutVarPrefix.Length);
+                        int varNameLength = span.IndexOf('!');
+                        if (varNameLength > 0)
+                        {
+                            var varName = span[0..varNameLength].ToString();
+                            var varValue = ParseJson(value.AsMemory(OutVarPrefix.Length + varNameLength + 1));
+                            lock (outVariables)
+                            {
+                                outVarsSet.Add(varName);
+                                outVariables[varName] = varValue;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        this.OnOutputReceived(obj);
+                    }
                 };
 
             powerShell.Streams.Progress.DataAdded += (s, e) => this.OnProgressUpdate(powerShell.Streams.Progress[e.Index]);
@@ -226,6 +249,15 @@ namespace Inedo.Extensions.Scripting.PowerShell
                 powerShell.AddParameter(p.Key, ConvertToPSValue(p.Value));
             }
 
+            if (outVariables.Count > 0)
+            {
+                foreach (var var in outVariables.Keys)
+                {
+                    powerShell.AddStatement();
+                    powerShell.AddScript($"Write-Output \"{OutVarPrefix}{var}!$(ConvertTo-Json -InputObject ${{{var}}} -Compress)\"");
+                }
+            }
+
             int? exitCode = null;
             this.pshost.ShouldExit += handleShouldExit;
             using (var registration = cancellationToken.Register(powerShell.Stop))
@@ -235,7 +267,10 @@ namespace Inedo.Extensions.Scripting.PowerShell
                     await Task.Factory.FromAsync(powerShell.BeginInvoke((PSDataCollection<PSObject>)null, output), powerShell.EndInvoke);
 
                     foreach (var var in outVariables.Keys.ToList())
-                        outVariables[var] = PSUtil.ToRuntimeValue(unwrapReference(powerShell.Runspace.SessionStateProxy.GetVariable(var)));
+                    {
+                        if (!outVarsSet.Contains(var))
+                            outVariables[var] = PSUtil.ToRuntimeValue(unwrapReference(powerShell.Runspace.SessionStateProxy.GetVariable(var)));
+                    }
                 }
                 finally
                 {
@@ -245,7 +280,7 @@ namespace Inedo.Extensions.Scripting.PowerShell
 
             void handleShouldExit(object s, ShouldExitEventArgs e) => exitCode = e.ExitCode;
 
-            object unwrapReference(object value) => value is PSReference reference ? reference.Value : value;
+            static object unwrapReference(object value) => value is PSReference reference ? reference.Value : value;
 
             return exitCode;
         }
@@ -346,6 +381,44 @@ namespace Inedo.Extensions.Scripting.PowerShell
             }
 
             return vars;
+        }
+        private static RuntimeValue ParseJson(ReadOnlyMemory<char> json)
+        {
+            using var doc = JsonDocument.Parse(json);
+            return convertElement(doc.RootElement);
+
+            static RuntimeValue convertElement(JsonElement element)
+            {
+                switch (element.ValueKind)
+                {
+                    case JsonValueKind.String or JsonValueKind.Number or JsonValueKind.True or JsonValueKind.False:
+                        return element.ToString();
+
+                    case JsonValueKind.Object:
+                        {
+                            var dict = new Dictionary<string, RuntimeValue>();
+                            foreach (var prop in element.EnumerateObject())
+                                dict.Add(prop.Name, convertElement(prop.Value));
+
+                            if (dict.Count == 1 && dict.TryGetValue("Value", out var nestedValue))
+                                return nestedValue;
+
+                            return new RuntimeValue(dict);
+                        }
+
+                    case JsonValueKind.Array:
+                        {
+                            var list = new List<RuntimeValue>();
+                            foreach (var item in element.EnumerateArray())
+                                list.Add(convertElement(item));
+
+                            return new RuntimeValue(list);
+                        }
+
+                    default:
+                        return string.Empty;
+                }
+            }
         }
 
         private void OnOutputReceived(PSObject obj) => this.OutputReceived?.Invoke(this, new PowerShellOutputEventArgs(obj));
