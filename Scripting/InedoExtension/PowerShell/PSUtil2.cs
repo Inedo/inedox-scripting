@@ -16,23 +16,39 @@ namespace Inedo.Extensions.Scripting.PowerShell
     {
         public static async Task<ExecuteScriptResult> ExecuteScript2Async(IPSScriptingOperation operation, IOperationExecutionContext context, bool collectOutput, EventHandler<PSProgressEventArgs> progressUpdateHandler, string successExitCode = null, PsExecutionMode executionMode = PsExecutionMode.Normal, bool preferWindowsPowerShell = true)
         {
-            if (operation.ScriptName?.EndsWith(".ps1", StringComparison.OrdinalIgnoreCase) != true)
-            {
-                operation.LogError($"PowerShell Script name \"{operation.ScriptName}\" is invalid.");
-                return null;
-            }
+            string scriptContent;
+            PowerShellScriptInfo scriptInfo;
 
-            var scriptItem = SDK.GetRaftItem(RaftItemType.Script, operation.ScriptName, context);
-            if (scriptItem == null)
+            if (string.IsNullOrEmpty(operation.ScriptText))
             {
-                operation.LogError($"PowerShell Script \"{operation.ScriptName}\" not found.");
-                return null;
-            }
+                if (operation.ScriptName?.EndsWith(".ps1", StringComparison.OrdinalIgnoreCase) != true)
+                {
+                    operation.LogError($"PowerShell Script name \"{operation.ScriptName}\" is invalid.");
+                    return null;
+                }
 
-            if (!PowerShellScriptInfo.TryParse(new StringReader(scriptItem.Content), out var scriptInfo))
+                var scriptItem = SDK.GetRaftItem(RaftItemType.Script, operation.ScriptName, context);
+                if (scriptItem == null)
+                {
+                    operation.LogError($"PowerShell Script \"{operation.ScriptName}\" not found.");
+                    return null;
+                }
+
+                scriptContent = scriptItem.Content;
+                if (!PowerShellScriptInfo.TryParse(new StringReader(scriptContent), out scriptInfo))
+                {
+                    operation.LogDebug($"PowerShell Script \"{operation.ScriptName}\" could not be parsed, and may error upon executing.");
+                    scriptInfo = null;
+                }
+            }
+            else
             {
-                operation.LogDebug($"PowerShell Script \"{operation.ScriptName}\" could not be parsed, and may error upon executing.");
-                scriptInfo = null;
+                scriptContent = operation.ScriptText;
+                if (!PowerShellScriptInfo.TryParse(new StringReader(scriptContent), out scriptInfo))
+                {
+                    operation.LogDebug("PowerShell Script could not be parsed, and may error upon executing.");
+                    scriptInfo = null;
+                }
             }
 
             var psVariables = new Dictionary<string, RuntimeValue>(StringComparer.OrdinalIgnoreCase);
@@ -73,7 +89,7 @@ namespace Inedo.Extensions.Scripting.PowerShell
                     var uniqueConfigKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                     void setOutputVariable(string oe)
                     {
-                        if (oe?.StartsWith("$") == true)
+                        if (oe?.StartsWith('$') == true)
                             psOutVariables.Add(oe.TrimStart('$'));
                     }
                     foreach (var configParam in scriptInfo.ConfigParameters)
@@ -112,7 +128,7 @@ namespace Inedo.Extensions.Scripting.PowerShell
 
             var job = new ExecutePowerShellJob
             {
-                ScriptText = scriptItem.Content,
+                ScriptText = scriptContent,
                 DebugLogging = false,
                 VerboseLogging = true,
                 CollectOutput = collectOutput,
@@ -185,11 +201,12 @@ namespace Inedo.Extensions.Scripting.PowerShell
                         if (string.IsNullOrEmpty(oe))
                             return defaultValue;
 
-                        if (oe.StartsWith("$") && result.OutVariables.TryGetValue(oe.Substring(1), out var oval))
+                        if (oe.StartsWith('$') && result.OutVariables.TryGetValue(oe[1..], out var oval))
                         {
                             result.OutVariables.Remove(oe);
                             return oval;
                         }
+
                         return new RuntimeValue(oe);
                     }
                 }
@@ -209,7 +226,5 @@ namespace Inedo.Extensions.Scripting.PowerShell
 
             return data;
         }
-
-
     }
 }

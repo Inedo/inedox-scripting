@@ -54,6 +54,13 @@ PSCall2 hdars.ps1 (
         [Description("When true, the script will be run using Windows PowerShell 5.1 where available. When false or on Linux (or on Windows systems without PowerShell 5.1 installed), the script will be run using PowerShell Core instead.")]
         public bool PreferWindowsPowerShell { get; set; } = true;
 
+        /// <summary>
+        /// Used for internal automation.
+        /// </summary>
+        [Undisclosed]
+        [ScriptAlias("ScriptText")]
+        public string ScriptText { get; set; }
+
         string IScriptingOperation.Arguments { get => throw new System.NotImplementedException(); set => throw new System.NotImplementedException(); }
         IReadOnlyDictionary<string, string> IScriptingOperation.EnvironmentVariables { get => throw new System.NotImplementedException(); set => throw new System.NotImplementedException(); }
 
@@ -66,7 +73,7 @@ PSCall2 hdars.ps1 (
             }
 
             var fullScriptName = this.ScriptName;
-            if (fullScriptName == null || !fullScriptName.EndsWith(".ps1"))
+            if (string.IsNullOrEmpty(this.ScriptText) && (fullScriptName == null || !fullScriptName.EndsWith(".ps1")))
             {
                 this.LogError("Bad or missing script name.");
                 return Complete;

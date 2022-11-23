@@ -5,5 +5,6 @@ namespace Inedo.Extensions.Scripting.Operations.PowerShell
 {
     internal interface IPSScriptingOperation : IScriptingOperation, ILogSink
     {
+        string ScriptText { get; }
     }
 }
