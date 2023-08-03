@@ -20,11 +20,11 @@ namespace Inedo.Extensions.Scripting.Operations.PowerShell
     [EditorBrowsable(EditorBrowsableState.Never)]
     [Note("An argument may be explicitly converted to an integral type by prefixing the value with [type::<typeName>], where <typeName> is one of: int, uint, long, ulong, double, decimal. Normally this conversion is performed automatically and this is not necessary.")]
     [Example(@"
-# execute the hdars.ps1 script, passing Argument1 and Aaaaaarg2 as variables, and capturing the value of OutputArg as $MyVariable
+# execute the hdars.ps1 script, passing Argument1 and Aaaaaarg2 as variables, and capturing the value of the PowerShell variable MyVariableSetInPowerShell to the OtterScript variable $MyVariable
 pscall hdars (
   Argument1: hello,
   Aaaaaarg2: World,
-  OutputArg => $MyVariable
+  MyVariableSetInPowerShell => $MyVariable
 );
 ")]
     public sealed class PSCallOperation : ExecuteOperation, ICustomArgumentMapper
