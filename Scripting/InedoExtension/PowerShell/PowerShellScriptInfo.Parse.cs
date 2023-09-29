@@ -106,17 +106,17 @@ namespace Inedo.Extensions.Scripting.PowerShell
             if (SDK.ProductName == "BuildMaster")
             {
                 // this is only ever called from the planeditor page, but there are multiple ways to get the data...
-                if (HttpContextThatWorksOnLinux.Current == null)
+                if (AhHttpContext.Current == null)
                     return null;
 
                 // the really easy way to get the applicationId (building the operation editor)
-                var applicationId = AH.ParseInt(HttpContextThatWorksOnLinux.Current.Request.QueryString["applicationId"]);
+                var applicationId = AH.ParseInt(AhHttpContext.Current.Request.QueryString["applicationId"]);
                 if (!applicationId.HasValue)
                 {
                     // the "other" ways (rebuilding TSSatements)
                     var fullItemId = AH.CoalesceString(
-                        HttpContextThatWorksOnLinux.Current.Request.QueryString["planId"],
-                        HttpContextThatWorksOnLinux.Current.Request.Form["additionalContext"]
+                        AhHttpContext.Current.Request.QueryString["planId"],
+                        AhHttpContext.Current.Request.Form["additionalContext"]
                     );
                     if (string.IsNullOrEmpty(fullItemId))
                         return null;
