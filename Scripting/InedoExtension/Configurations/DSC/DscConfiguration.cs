@@ -71,6 +71,14 @@ namespace Inedo.Extensions.Scripting.Configurations.DSC
             }
         }
 
+        [DefaultValue("$PreferWindowsPowerShell")]
+        [ScriptAlias("PreferWindowsPowerShell")]
+        [DisplayName("Prefer Windows PowerShell")]
+        [Description("When true, the script will be run using Windows PowerShell 5.1 where available. When false or on Linux (or on Windows systems without PowerShell 5.1 installed), the script will be run using PowerShell Core instead.")]
+        [Category("Advanced")]
+        [IgnoreConfigurationDrift]
+        public string PreferWindowsPowerShell { get; set; }
+
         [Persistent]
         public bool InDesiredState { get; set; }
         [Persistent]

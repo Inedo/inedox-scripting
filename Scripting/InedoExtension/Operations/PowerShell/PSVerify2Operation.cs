@@ -39,11 +39,12 @@ namespace Inedo.Extensions.Scripting.Operations.PowerShell
         public IReadOnlyDictionary<string, RuntimeValue> InputVariables { get; set; }
         [ScriptAlias("OutputVariables")]
         public IEnumerable<string> OutputVariables { get; set; }
-        [DefaultValue(true)]
+
+        [DefaultValue("$PreferWindowsPowerShell")]
         [ScriptAlias("PreferWindowsPowerShell")]
         [DisplayName("Prefer Windows PowerShell")]
         [Description("When true, the script will be run using Windows PowerShell 5.1 where available. When false or on Linux (or on Windows systems without PowerShell 5.1 installed), the script will be run using PowerShell Core instead.")]
-        public bool PreferWindowsPowerShell { get; set; } = true;
+        public string PreferWindowsPowerShell { get; set; }
 
         /// <summary>
         /// Used for internal automation.
@@ -64,12 +65,25 @@ namespace Inedo.Extensions.Scripting.Operations.PowerShell
                 this.LogInformation("Executing PowerShell Script...");
                 return null;
             }
-
+            if (string.IsNullOrEmpty(this.PreferWindowsPowerShell))
+            {
+                var maybeVariable = context.TryGetVariableValue(new RuntimeVariableName("PreferWindowsPowerShell", RuntimeValueType.Scalar));
+                if (maybeVariable == null)
+                {
+                    var maybeFunc = context.TryGetFunctionValue("PreferWindowsPowerShell");
+                    if (maybeFunc == null)
+                        this.PreferWindowsPowerShell = bool.TrueString;
+                    else
+                        this.PreferWindowsPowerShell = maybeFunc.Value.AsString();
+                }
+                else
+                    this.PreferWindowsPowerShell = maybeVariable.Value.AsString();
+            }
             var result = await PSUtil2.ExecuteScript2Async(
                 operation: this,
                 context: context,
                 collectOutput: true,
-                preferWindowsPowerShell: this.PreferWindowsPowerShell,
+                preferWindowsPowerShell: bool.TryParse(this.PreferWindowsPowerShell, out bool preferWindowsPowerShell) ? preferWindowsPowerShell : true,
                 progressUpdateHandler: (s, e) => this.currentProgress = e,
                 executionMode: PsExecutionMode.Collect
             );

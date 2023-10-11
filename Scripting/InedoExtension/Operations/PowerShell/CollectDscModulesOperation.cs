@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Inedo.Agents;
 using Inedo.Diagnostics;
 using Inedo.Documentation;
+using Inedo.ExecutionEngine;
 using Inedo.Extensibility;
 using Inedo.Extensibility.Configurations;
 using Inedo.Extensibility.Operations;
@@ -24,7 +25,18 @@ namespace Inedo.Extensions.Scripting.Operations.PowerShell
 
         protected override async Task<IEnumerable<PackageConfiguration>> CollectPackagesAsync(IOperationCollectionContext context)
         {
-            using var job = new CollectDscModulesJob { DebugLogging = true };
+            var preferWindowsPowerShell = bool.TrueString;
+            var maybeVariable = context.TryGetVariableValue(new RuntimeVariableName("PreferWindowsPowerShell", RuntimeValueType.Scalar));
+            if (maybeVariable == null)
+            {
+                var maybeFunc = context.TryGetFunctionValue("PreferWindowsPowerShell");
+                if (maybeFunc != null)
+                    preferWindowsPowerShell = maybeFunc.Value.AsString();
+            }
+            else
+                preferWindowsPowerShell = maybeVariable.Value.AsString();
+
+            using var job = new CollectDscModulesJob { DebugLogging = true, PreferWindowsPowerShell = bool.TryParse(preferWindowsPowerShell, out bool _preferWindowsPowerShell) ? _preferWindowsPowerShell : true };
             job.MessageLogged += (s, e) => this.Log(e.Level, e.Message);
 
             var jobExecuter = await context.Agent.GetServiceAsync<IRemoteJobExecuter>();

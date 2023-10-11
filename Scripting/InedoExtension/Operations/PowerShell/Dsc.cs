@@ -27,9 +27,24 @@ namespace Inedo.Extensions.Scripting.Operations.PowerShell
 
             var jobRunner = await context.Agent.GetServiceAsync<IRemoteJobExecuter>();
 
-            var propertyTypes = await GetPropertyTypesAsync(context, jobRunner, template.ResourceName, template.ModuleName, log);
+            if (string.IsNullOrEmpty(template.PreferWindowsPowerShell))
+            {
+                var maybeVariable = context.TryGetVariableValue(new RuntimeVariableName("PreferWindowsPowerShell", RuntimeValueType.Scalar));
+                if (maybeVariable == null)
+                {
+                    var maybeFunc = context.TryGetFunctionValue("PreferWindowsPowerShell");
+                    if (maybeFunc == null)
+                        template.PreferWindowsPowerShell = bool.TrueString;
+                    else
+                        template.PreferWindowsPowerShell = maybeFunc.Value.AsString();
+                }
+                else
+                    template.PreferWindowsPowerShell = maybeVariable.Value.AsString();
+            }
+            var useWindowsPowerShell = bool.TryParse(template.PreferWindowsPowerShell, out bool preferWindowsPowerShell) ? preferWindowsPowerShell : true;
+            var propertyTypes = await GetPropertyTypesAsync(context, jobRunner, template.ResourceName, template.ModuleName, useWindowsPowerShell, log);
 
-            var collectJob = CreateJob("Get", propertyTypes, template);
+            var collectJob = CreateJob("Get", propertyTypes, template, useWindowsPowerShell);
 
             log.LogDebug(collectJob.ScriptText);
             collectJob.MessageLogged += (s, e) => log.Log(e.Level, e.Message);
@@ -41,7 +56,7 @@ namespace Inedo.Extensions.Scripting.Operations.PowerShell
             foreach (var k in removeKeys)
                 collectValues.Remove(k);
 
-            var testJob = CreateJob("Test", propertyTypes, template);
+            var testJob = CreateJob("Test", propertyTypes, template, useWindowsPowerShell);
 
             log.LogDebug(testJob.ScriptText);
             testJob.MessageLogged += (s, e) => log.Log(e.Level, e.Message);
@@ -90,16 +105,30 @@ namespace Inedo.Extensions.Scripting.Operations.PowerShell
             }
 
             var jobRunner = await context.Agent.GetServiceAsync<IRemoteJobExecuter>();
+            if (string.IsNullOrEmpty(template.PreferWindowsPowerShell))
+            {
+                var maybeVariable = context.TryGetVariableValue(new RuntimeVariableName("PreferWindowsPowerShell", RuntimeValueType.Scalar));
+                if (maybeVariable == null)
+                {
+                    var maybeFunc = context.TryGetFunctionValue("PreferWindowsPowerShell");
+                    if (maybeFunc == null)
+                        template.PreferWindowsPowerShell = bool.TrueString;
+                    else
+                        template.PreferWindowsPowerShell = maybeFunc.Value.AsString();
+                }
+                else
+                    template.PreferWindowsPowerShell = maybeVariable.Value.AsString();
+            }
+            var useWindowsPowerShell = bool.TryParse(template.PreferWindowsPowerShell, out bool preferWindowsPowerShell) ? preferWindowsPowerShell : true;
+            var propertyTypes = await GetPropertyTypesAsync(context, jobRunner, template.ResourceName, template.ModuleName, useWindowsPowerShell, log);
 
-            var propertyTypes = await GetPropertyTypesAsync(context, jobRunner, template.ResourceName, template.ModuleName, log);
-
-            var job = CreateJob("Set", propertyTypes, template);
+            var job = CreateJob("Set", propertyTypes, template, useWindowsPowerShell);
             job.MessageLogged += (s, e) => log.Log(e.Level, e.Message);
 
             await jobRunner.ExecuteJobAsync(job, context.CancellationToken);
         }
 
-        private static async Task<Dictionary<string, RuntimeValueType>> GetPropertyTypesAsync(IOperationExecutionContext context, IRemoteJobExecuter jobRunner, string resourceName, string moduleName, ILogSink log)
+        private static async Task<Dictionary<string, RuntimeValueType>> GetPropertyTypesAsync(IOperationExecutionContext context, IRemoteJobExecuter jobRunner, string resourceName, string moduleName, bool preferWindowsPowerShell, ILogSink log)
         {
             var job = new ExecutePowerShellJob
             {
@@ -114,7 +143,7 @@ Write-Output $h",
                     ["Name"] = resourceName,
                     ["ModuleName"] = AH.CoalesceString(moduleName, "PSDesiredStateConfiguration")
                 },
-                PreferWindowsPowerShell = true
+                PreferWindowsPowerShell = preferWindowsPowerShell
             };
 
             job.MessageLogged += (s, e) => log.Log(e.Level, e.Message);
@@ -135,7 +164,7 @@ Write-Output $h",
 
             return types;
         }
-        private static ExecutePowerShellJob CreateJob(string method, Dictionary<string, RuntimeValueType> propertyTypes, DscConfiguration template)
+        private static ExecutePowerShellJob CreateJob(string method, Dictionary<string, RuntimeValueType> propertyTypes, DscConfiguration template, bool preferWindowsPowerShell)
         {
             var job = new ExecutePowerShellJob
             {
@@ -147,7 +176,7 @@ Write-Output $h",
                     ["Property"] = new RuntimeValue(template.ToPowerShellDictionary(propertyTypes)),
                     ["ModuleName"] = AH.CoalesceString(template.ModuleName, "PSDesiredStateConfiguration")
                 },
-                PreferWindowsPowerShell = true
+                PreferWindowsPowerShell = preferWindowsPowerShell
             };
 
             return job;

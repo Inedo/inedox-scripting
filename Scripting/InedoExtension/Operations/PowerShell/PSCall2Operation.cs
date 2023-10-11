@@ -48,11 +48,12 @@ PSCall2 hdars.ps1 (
         public IReadOnlyDictionary<string, RuntimeValue> InputVariables { get; set; }
         [ScriptAlias("OutputVariables")]
         public IEnumerable<string> OutputVariables { get; set; }
-        [DefaultValue(true)]
+
+        [DefaultValue("$PreferWindowsPowerShell")]
         [ScriptAlias("PreferWindowsPowerShell")]
         [DisplayName("Prefer Windows PowerShell")]
         [Description("When true, the script will be run using Windows PowerShell 5.1 where available. When false or on Linux (or on Windows systems without PowerShell 5.1 installed), the script will be run using PowerShell Core instead.")]
-        public bool PreferWindowsPowerShell { get; set; } = true;
+        public string PreferWindowsPowerShell { get; set; }
 
         /// <summary>
         /// Used for internal automation.
@@ -79,11 +80,26 @@ PSCall2 hdars.ps1 (
                 return Complete;
             }
 
+            if (string.IsNullOrEmpty(this.PreferWindowsPowerShell))
+            {
+                var maybeVariable = context.TryGetVariableValue(new RuntimeVariableName("PreferWindowsPowerShell", RuntimeValueType.Scalar));
+                if (maybeVariable == null)
+                {
+                    var maybeFunc = context.TryGetFunctionValue("PreferWindowsPowerShell");
+                    if (maybeFunc == null)
+                        this.PreferWindowsPowerShell = bool.TrueString;
+                    else
+                        this.PreferWindowsPowerShell = maybeFunc.Value.AsString();
+                }
+                else
+                    this.PreferWindowsPowerShell = maybeVariable.Value.AsString();
+            }
+
             return PSUtil2.ExecuteScript2Async(
                 operation: this,
                 context: context,
                 collectOutput: false,
-                preferWindowsPowerShell: this.PreferWindowsPowerShell,
+                preferWindowsPowerShell: bool.TryParse(this.PreferWindowsPowerShell, out bool preferWindowsPowerShell) ? preferWindowsPowerShell : true,
                 progressUpdateHandler: (s, e) => Interlocked.Exchange(ref this.currentProgress, e)
             );
         }
