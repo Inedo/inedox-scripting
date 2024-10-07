@@ -65,37 +65,25 @@ PSCall2 hdars.ps1 (
         string IScriptingOperation.Arguments { get => throw new System.NotImplementedException(); set => throw new System.NotImplementedException(); }
         IReadOnlyDictionary<string, string> IScriptingOperation.EnvironmentVariables { get => throw new System.NotImplementedException(); set => throw new System.NotImplementedException(); }
 
-        public override Task ExecuteAsync(IOperationExecutionContext context)
+        public override async Task ExecuteAsync(IOperationExecutionContext context)
         {
             if (context.Simulation)
             {
                 this.LogInformation("Executing PowerShell Script...");
-                return Complete;
+                return;
             }
 
             var fullScriptName = this.ScriptName;
             if (string.IsNullOrEmpty(this.ScriptText) && (fullScriptName == null || !fullScriptName.EndsWith(".ps1")))
             {
                 this.LogError("Bad or missing script name.");
-                return Complete;
+                return;
             }
 
             if (string.IsNullOrEmpty(this.PreferWindowsPowerShell))
-            {
-                var maybeVariable = context.TryGetVariableValue(new RuntimeVariableName("PreferWindowsPowerShell", RuntimeValueType.Scalar));
-                if (maybeVariable == null)
-                {
-                    var maybeFunc = context.TryGetFunctionValue("PreferWindowsPowerShell");
-                    if (maybeFunc == null)
-                        this.PreferWindowsPowerShell = bool.TrueString;
-                    else
-                        this.PreferWindowsPowerShell = maybeFunc.Value.AsString();
-                }
-                else
-                    this.PreferWindowsPowerShell = maybeVariable.Value.AsString();
-            }
+                this.PreferWindowsPowerShell = (await context.ExpandVariablesAsync("$PreferWindowsPowerShell")).AsString();
 
-            return PSUtil2.ExecuteScript2Async(
+            await PSUtil2.ExecuteScript2Async(
                 operation: this,
                 context: context,
                 collectOutput: false,

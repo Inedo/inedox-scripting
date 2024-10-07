@@ -35,29 +35,30 @@ pscall hdars (
         public IReadOnlyDictionary<string, RuntimeValue> NamedArguments { get; set; }
         public IDictionary<string, RuntimeValue> OutArguments { get; set; }
 
-        public override Task ExecuteAsync(IOperationExecutionContext context)
+        public override async Task ExecuteAsync(IOperationExecutionContext context)
         {
             if (context.Simulation)
             {
                 this.LogInformation("Executing PowerShell Script...");
-                return Complete;
+                return;
             }
 
             var fullScriptName = this.DefaultArgument.AsString();
             if (fullScriptName == null)
             {
                 this.LogError("Bad or missing script name.");
-                return Complete;
+                return;
             }
 
-            return PSUtil.ExecuteScriptAssetAsync(
+            await PSUtil.ExecuteScriptAssetAsync(
                 logger: this,
                 context: context,
                 fullScriptName: fullScriptName,
                 arguments: this.NamedArguments,
                 outArguments: this.OutArguments,
                 collectOutput: false,
-                progressUpdateHandler: (s, e) => Interlocked.Exchange(ref this.currentProgress, e)
+                progressUpdateHandler: (s, e) => Interlocked.Exchange(ref this.currentProgress, e),
+                preferWindowsPowerShell: !bool.TryParse((await context.ExpandVariablesAsync("$PreferWindowsPowerShell")).AsString(), out bool p) || p
             );
         }
         public override OperationProgress GetProgress()

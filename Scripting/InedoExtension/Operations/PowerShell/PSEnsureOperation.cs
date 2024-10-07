@@ -58,7 +58,8 @@ PSEnsure hdars (
                 outArguments: this.OutArguments,
                 collectOutput: true,
                 progressUpdateHandler: (s, e) => this.currentProgress = e,
-                executionMode: PsExecutionMode.Collect
+                executionMode: PsExecutionMode.Collect,
+                preferWindowsPowerShell: !bool.TryParse((await context.ExpandVariablesAsync("$PreferWindowsPowerShell")).AsString(), out bool p) || p
             );
 
             this.collectedConfiguration = new PSPersistedConfiguration(result);
@@ -91,7 +92,8 @@ PSEnsure hdars (
                 outArguments: this.OutArguments,
                 collectOutput: true,
                 progressUpdateHandler: (s, e) => this.currentProgress = e,
-                executionMode: PsExecutionMode.Configure
+                executionMode: PsExecutionMode.Configure,
+                preferWindowsPowerShell: !bool.TryParse((await context.ExpandVariablesAsync("$PreferWindowsPowerShell")).AsString(), out bool p) || p
             );
             this.collectedConfiguration = new PSPersistedConfiguration(result);
         }

@@ -50,7 +50,8 @@ namespace Inedo.Extensions.Scripting.Operations.PowerShell
                 outArguments: this.OutArguments,
                 collectOutput: true,
                 progressUpdateHandler: (s, e) => this.currentProgress = e,
-                executionMode: PsExecutionMode.Collect
+                executionMode: PsExecutionMode.Collect,
+                preferWindowsPowerShell: !bool.TryParse((await context.ExpandVariablesAsync("$PreferWindowsPowerShell")).AsString(), out bool p) || p
             );
 
             this.collectedConfiguration = new PSPersistedConfiguration(result);

@@ -23,13 +23,13 @@ namespace Inedo.Extensions.Scripting.PowerShell
             else
                 return ExecuteScriptDirectAsync(logger, context, scriptNameOrContent, arguments, outArguments, collectOutput, progressUpdateHandler, successExitCode);
         }
-        public static Task<ExecuteScriptResult> ExecuteScriptAssetAsync(ILogSink logger, IOperationExecutionContext context, string fullScriptName, IReadOnlyDictionary<string, RuntimeValue> arguments, IDictionary<string, RuntimeValue> outArguments, bool collectOutput, EventHandler<PSProgressEventArgs> progressUpdateHandler, string successExitCode = null, PsExecutionMode executionMode = PsExecutionMode.Normal)
+        public static Task<ExecuteScriptResult> ExecuteScriptAssetAsync(ILogSink logger, IOperationExecutionContext context, string fullScriptName, IReadOnlyDictionary<string, RuntimeValue> arguments, IDictionary<string, RuntimeValue> outArguments, bool collectOutput, EventHandler<PSProgressEventArgs> progressUpdateHandler, string successExitCode = null, PsExecutionMode executionMode = PsExecutionMode.Normal, bool preferWindowsPowerShell = true)
         {
             var scriptText = GetScriptText(logger, fullScriptName, context);
             if (scriptText == null)
                 return Task.FromResult<ExecuteScriptResult>(null);
 
-            return ExecuteScriptDirectAsync(logger, context, scriptText, arguments, outArguments, collectOutput, progressUpdateHandler, successExitCode, executionMode, fullScriptName);
+            return ExecuteScriptDirectAsync(logger, context, scriptText, arguments, outArguments, collectOutput, progressUpdateHandler, successExitCode, executionMode, fullScriptName, preferWindowsPowerShell);
         }
         public static async Task<ExecuteScriptResult> ExecuteScriptDirectAsync(ILogSink logger, IOperationExecutionContext context, string scriptText, IReadOnlyDictionary<string, RuntimeValue> arguments, IDictionary<string, RuntimeValue> outArguments, bool collectOutput, EventHandler<PSProgressEventArgs> progressUpdateHandler, string successExitCode = null, PsExecutionMode executionMode = PsExecutionMode.Normal, string fullScriptName = null, bool preferWindowsPowerShell = true)
         {
