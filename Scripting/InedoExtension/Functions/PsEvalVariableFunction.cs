@@ -65,9 +65,11 @@ public sealed class PSEvalVariableFunction : VariableFunction, IAsyncVariableFun
         if (errorLogged)
             throw new ExecutionFailureException("PSEVal: PowerShell script failed with an error (see previous log messages).");
 
-        if (result!.Output.Count == 1)
-            return result.Output[0];
-        else
-            return new RuntimeValue(result.Output);
+        return result?.Output.Count switch
+        {
+            null or 0 => string.Empty,
+            1 => result.Output[0],
+            _ => new RuntimeValue(result.Output)
+        };
     }
 }
