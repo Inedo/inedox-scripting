@@ -2,57 +2,72 @@
 using System.ComponentModel;
 using System.Threading.Tasks;
 using Inedo.Agents;
+using Inedo.Diagnostics;
 using Inedo.Documentation;
 using Inedo.ExecutionEngine;
+using Inedo.ExecutionEngine.Executer;
 using Inedo.Extensibility;
 using Inedo.Extensibility.Operations;
 using Inedo.Extensibility.VariableFunctions;
 using Inedo.Extensions.Scripting.PowerShell;
 
-namespace Inedo.Extensions.Scripting.Functions
+#nullable enable
+
+namespace Inedo.Extensions.Scripting.Functions;
+
+[ScriptAlias("PSEval")]
+[Description("Returns the result of a PowerShell script.")]
+[Tag("PowerShell")]
+[Example("""
+    # set the $NextYear variable to the value of... next year
+    set $PowershellScript = >>
+    (Get-Date).year + 1
+    >>;
+
+    set $NextYear = $PSEval($PowershellScript);
+
+    Log-Information $NextYear;
+    """)]
+[Category("PowerShell")]
+public sealed class PSEvalVariableFunction : VariableFunction, IAsyncVariableFunction
 {
-    [ScriptAlias("PSEval")]
-    [Description("Returns the result of a PowerShell script.")]
-    [Tag("PowerShell")]
-    [Example(@"
-# set the $NextYear variable to the value of... next year
-set $PowershellScript = >>
-(Get-Date).year + 1
->>;
+    [DisplayName("script")]
+    [VariableFunctionParameter(0)]
+    [Description("The PowerShell script to execute. This should be an expression.")]
+    public string? ScriptText { get; set; }
 
-set $NextYear = $PSEval($PowershellScript);
+    public override RuntimeValue Evaluate(IVariableFunctionContext context) => throw new NotImplementedException();
 
-Log-Information $NextYear;
-")]
-    [Category("PowerShell")]
-    public sealed partial class PSEvalVariableFunction : VariableFunction, IAsyncVariableFunction
+    public async ValueTask<RuntimeValue> EvaluateAsync(IVariableFunctionContext context)
     {
-        [DisplayName("script")]
-        [VariableFunctionParameter(0)]
-        [Description("The PowerShell script to execute. This should be an expression.")]
-        public string ScriptText { get; set; }
+        if (context is not IOperationExecutionContext execContext)
+            throw new NotSupportedException("This function can currently only be used within an execution.");
 
-        public override RuntimeValue Evaluate(IVariableFunctionContext context) => throw new NotImplementedException();
-
-        public async ValueTask<RuntimeValue> EvaluateAsync(IVariableFunctionContext context)
+        var job = new ExecutePowerShellJob
         {
-            if (context is not IOperationExecutionContext execContext)
-                throw new NotSupportedException("This function can currently only be used within an execution.");
+            CollectOutput = true,
+            ScriptText = this.ScriptText,
+            Variables = PowerShellScriptRunner.ExtractVariables(this.ScriptText, execContext)
+        };
 
-            var job = new ExecutePowerShellJob
-            {
-                CollectOutput = true,
-                ScriptText = this.ScriptText,
-                Variables = PowerShellScriptRunner.ExtractVariables(this.ScriptText, execContext)
-            };
+        var jobExecuter = await execContext.Agent.GetServiceAsync<IRemoteJobExecuter>().ConfigureAwait(false);
 
-            var jobExecuter = await execContext.Agent.GetServiceAsync<IRemoteJobExecuter>().ConfigureAwait(false);
-            var result = (ExecutePowerShellJob.Result)await jobExecuter.ExecuteJobAsync(job, execContext.CancellationToken).ConfigureAwait(false);
+        bool errorLogged = false;
 
-            if (result.Output.Count == 1)
-                return result.Output[0];
-            else
-                return new RuntimeValue(result.Output);
-        }
+        job.MessageLogged += (s, e) =>
+        {
+            execContext.Log.Log(e);
+            errorLogged |= e.Level == MessageLevel.Error;
+        };
+
+        var result = (ExecutePowerShellJob.Result?)await jobExecuter.ExecuteJobAsync(job, execContext.CancellationToken).ConfigureAwait(false);
+
+        if (errorLogged)
+            throw new ExecutionFailureException("PSEVal: PowerShell script failed with an error (see previous log messages).");
+
+        if (result!.Output.Count == 1)
+            return result.Output[0];
+        else
+            return new RuntimeValue(result.Output);
     }
 }
