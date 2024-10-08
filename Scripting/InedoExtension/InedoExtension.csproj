@@ -24,6 +24,6 @@
     <PackageReference Include="Inedo.SDK" Version="2.4.0">
       <ExcludeAssets>runtime</ExcludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.2.6" />
+    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.2.23" />
   </ItemGroup>
 </Project>
