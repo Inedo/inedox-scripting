@@ -4,7 +4,7 @@ using Inedo.Extensibility;
 [assembly: AssemblyTitle("Scripting")]
 [assembly: AssemblyDescription("Provides operations for PowerShell, Python, Batch, and shell scripting.")]
 [assembly: AssemblyCompany("Inedo, LLC.")]
-[assembly: AssemblyCopyright("Copyright © Inedo 2023")]
+[assembly: AssemblyCopyright("Copyright © Inedo 2024")]
 [assembly: AssemblyProduct("any")]
 
 // Not for ProGet

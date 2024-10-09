@@ -9,6 +9,7 @@ using Inedo.ExecutionEngine;
 using Inedo.Extensibility.Configurations;
 using Inedo.Extensibility.Operations;
 using Inedo.Extensions.Scripting.Configurations.DSC;
+using Inedo.Extensions.Scripting.Functions;
 using Inedo.Extensions.Scripting.PowerShell;
 
 namespace Inedo.Extensions.Scripting.Operations.PowerShell
@@ -41,10 +42,12 @@ namespace Inedo.Extensions.Scripting.Operations.PowerShell
                 else
                     template.PreferWindowsPowerShell = maybeVariable.Value.AsString();
             }
-            var useWindowsPowerShell = bool.TryParse(template.PreferWindowsPowerShell, out bool preferWindowsPowerShell) ? preferWindowsPowerShell : true;
+            
+            var useWindowsPowerShell = context.GetFlagOrDefault<PreferWindowsPowerShellVariableFunction>(template.PreferWindowsPowerShell, true);
+            var autoTerminateProcess = context.GetFlagOrDefault<AutoTerminatePowerShellProcessVariableFunction>(defaultValue: true);
             var propertyTypes = await GetPropertyTypesAsync(context, jobRunner, template.ResourceName, template.ModuleName, useWindowsPowerShell, log);
 
-            var collectJob = CreateJob("Get", propertyTypes, template, useWindowsPowerShell);
+            var collectJob = CreateJob("Get", propertyTypes, template, useWindowsPowerShell, autoTerminateProcess);
 
             log.LogDebug(collectJob.ScriptText);
             collectJob.MessageLogged += (s, e) => log.Log(e.Level, e.Message);
@@ -56,7 +59,7 @@ namespace Inedo.Extensions.Scripting.Operations.PowerShell
             foreach (var k in removeKeys)
                 collectValues.Remove(k);
 
-            var testJob = CreateJob("Test", propertyTypes, template, useWindowsPowerShell);
+            var testJob = CreateJob("Test", propertyTypes, template, useWindowsPowerShell, autoTerminateProcess);
 
             log.LogDebug(testJob.ScriptText);
             testJob.MessageLogged += (s, e) => log.Log(e.Level, e.Message);
@@ -119,10 +122,12 @@ namespace Inedo.Extensions.Scripting.Operations.PowerShell
                 else
                     template.PreferWindowsPowerShell = maybeVariable.Value.AsString();
             }
-            var useWindowsPowerShell = bool.TryParse(template.PreferWindowsPowerShell, out bool preferWindowsPowerShell) ? preferWindowsPowerShell : true;
+
+            var useWindowsPowerShell = context.GetFlagOrDefault<PreferWindowsPowerShellVariableFunction>(template.PreferWindowsPowerShell, true);
+            var autoTerminateProcess = context.GetFlagOrDefault<AutoTerminatePowerShellProcessVariableFunction>(defaultValue: true);
             var propertyTypes = await GetPropertyTypesAsync(context, jobRunner, template.ResourceName, template.ModuleName, useWindowsPowerShell, log);
 
-            var job = CreateJob("Set", propertyTypes, template, useWindowsPowerShell);
+            var job = CreateJob("Set", propertyTypes, template, useWindowsPowerShell, autoTerminateProcess);
             job.MessageLogged += (s, e) => log.Log(e.Level, e.Message);
 
             await jobRunner.ExecuteJobAsync(job, context.CancellationToken);
@@ -143,7 +148,8 @@ Write-Output $h",
                     ["Name"] = resourceName,
                     ["ModuleName"] = AH.CoalesceString(moduleName, "PSDesiredStateConfiguration")
                 },
-                PreferWindowsPowerShell = preferWindowsPowerShell
+                PreferWindowsPowerShell = preferWindowsPowerShell,
+                TerminateHostProcess = context.GetFlagOrDefault<AutoTerminatePowerShellProcessVariableFunction>(defaultValue: true)
             };
 
             job.MessageLogged += (s, e) => log.Log(e.Level, e.Message);
@@ -164,7 +170,7 @@ Write-Output $h",
 
             return types;
         }
-        private static ExecutePowerShellJob CreateJob(string method, Dictionary<string, RuntimeValueType> propertyTypes, DscConfiguration template, bool preferWindowsPowerShell)
+        private static ExecutePowerShellJob CreateJob(string method, Dictionary<string, RuntimeValueType> propertyTypes, DscConfiguration template, bool preferWindowsPowerShell, bool terminateProcess)
         {
             var job = new ExecutePowerShellJob
             {
@@ -176,7 +182,8 @@ Write-Output $h",
                     ["Property"] = new RuntimeValue(template.ToPowerShellDictionary(propertyTypes)),
                     ["ModuleName"] = AH.CoalesceString(template.ModuleName, "PSDesiredStateConfiguration")
                 },
-                PreferWindowsPowerShell = preferWindowsPowerShell
+                PreferWindowsPowerShell = preferWindowsPowerShell,
+                TerminateHostProcess = terminateProcess
             };
 
             return job;

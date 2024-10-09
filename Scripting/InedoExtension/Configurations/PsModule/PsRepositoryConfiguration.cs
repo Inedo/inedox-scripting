@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Inedo.Agents;
 using Inedo.Diagnostics;
@@ -11,6 +10,7 @@ using Inedo.ExecutionEngine;
 using Inedo.Extensibility;
 using Inedo.Extensibility.Configurations;
 using Inedo.Extensibility.Operations;
+using Inedo.Extensions.Scripting.Functions;
 using Inedo.Extensions.Scripting.PowerShell;
 using Inedo.Serialization;
 using Inedo.Web;
@@ -169,22 +169,7 @@ namespace Inedo.Extensions.Scripting.Configurations.PsModule
 
             var jobRunner = await context.Agent.GetServiceAsync<IRemoteJobExecuter>();
 
-            if (string.IsNullOrEmpty(template.PreferWindowsPowerShell))
-            {
-                var maybeVariable = context.TryGetVariableValue(new RuntimeVariableName("PreferWindowsPowerShell", RuntimeValueType.Scalar));
-                if (maybeVariable == null)
-                {
-                    var maybeFunc = context.TryGetFunctionValue("PreferWindowsPowerShell");
-                    if (maybeFunc == null)
-                        template.PreferWindowsPowerShell = bool.TrueString;
-                    else
-                        template.PreferWindowsPowerShell = maybeFunc.Value.AsString();
-                }
-                else
-                    template.PreferWindowsPowerShell = maybeVariable.Value.AsString();
-            }
-
-            if ((await CollectInternalAsync(jobRunner, log, template))?.Exists ?? false)
+            if ((await CollectInternalAsync(context, jobRunner, log, template))?.Exists ?? false)
             {
                 var scriptText = "Unregister-PSRepository -Name $Name";
 
@@ -197,8 +182,6 @@ namespace Inedo.Extensions.Scripting.Configurations.PsModule
                     ["Name"] = template.Name
                 };
 
-
-
                 var job = new ExecutePowerShellJob
                 {
                     CollectOutput = true,
@@ -207,7 +190,8 @@ namespace Inedo.Extensions.Scripting.Configurations.PsModule
                     LogOutput = template.Verbose,
                     ScriptText = scriptText,
                     Variables = variables,
-                    PreferWindowsPowerShell = bool.TryParse(template.PreferWindowsPowerShell, out bool preferWindowsPowerShell) ? preferWindowsPowerShell : true
+                    PreferWindowsPowerShell = context.GetFlagOrDefault<PreferWindowsPowerShellVariableFunction>(template.PreferWindowsPowerShell, true),
+                    TerminateHostProcess = context.GetFlagOrDefault<AutoTerminatePowerShellProcessVariableFunction>(defaultValue: true)
                 };
 
                 log.LogDebug(job.ScriptText);
@@ -252,7 +236,8 @@ namespace Inedo.Extensions.Scripting.Configurations.PsModule
                     LogOutput = template.Verbose,
                     ScriptText = scriptText,
                     Variables = variables,
-                    PreferWindowsPowerShell = bool.TryParse(template.PreferWindowsPowerShell, out bool preferWindowsPowerShell) ? preferWindowsPowerShell : true
+                    PreferWindowsPowerShell = context.GetFlagOrDefault<PreferWindowsPowerShellVariableFunction>(template.PreferWindowsPowerShell, true),
+                    TerminateHostProcess = context.GetFlagOrDefault<AutoTerminatePowerShellProcessVariableFunction>(defaultValue: true)
                 };
 
                 log.LogDebug(job.ScriptText);
@@ -267,11 +252,10 @@ namespace Inedo.Extensions.Scripting.Configurations.PsModule
         public static async Task<PersistedConfiguration> CollectAsync(IOperationCollectionContext context, ILogSink log, PsRepositoryConfiguration template)
         {
             var jobRunner = await context.Agent.GetServiceAsync<IRemoteJobExecuter>();
-            return await CollectInternalAsync(jobRunner, log, template);
-            
+            return await CollectInternalAsync(context, jobRunner, log, template);
         }
 
-        private static async Task<PsRepositoryConfiguration> CollectInternalAsync(IRemoteJobExecuter jobRunner, ILogSink log, PsRepositoryConfiguration template)
+        private static async Task<PsRepositoryConfiguration> CollectInternalAsync(IOperationExecutionContext context, IRemoteJobExecuter jobRunner, ILogSink log, PsRepositoryConfiguration template)
         {
             try
             {
@@ -279,25 +263,10 @@ namespace Inedo.Extensions.Scripting.Configurations.PsModule
                 if (template.Verbose)
                     scriptText += " -Verbose";
 
-                if (string.IsNullOrEmpty(template.PreferWindowsPowerShell))
-                {
-                    var maybeVariable = ((IOperationCollectionContext)jobRunner).TryGetVariableValue(new RuntimeVariableName("PreferWindowsPowerShell", RuntimeValueType.Scalar));
-                    if (maybeVariable == null)
-                    {
-                        var maybeFunc = ((IOperationCollectionContext)jobRunner).TryGetFunctionValue("PreferWindowsPowerShell");
-                        if (maybeFunc == null)
-                            template.PreferWindowsPowerShell = bool.TrueString;
-                        else
-                            template.PreferWindowsPowerShell = maybeFunc.Value.AsString();
-                    }
-                    else
-                        template.PreferWindowsPowerShell = maybeVariable.Value.AsString();
-                }
-
                 var job = new ExecutePowerShellJob
                 {
                     CollectOutput = true,
-                    OutVariables = new[] { "results" },
+                    OutVariables = ["results"],
                     VerboseLogging = template.Verbose,
                     DebugLogging = template.DebugLogging,
                     LogOutput = template.Verbose,
@@ -306,7 +275,8 @@ namespace Inedo.Extensions.Scripting.Configurations.PsModule
                     {
                         ["Name"] = template.Name
                     },
-                    PreferWindowsPowerShell = bool.TryParse(template.PreferWindowsPowerShell, out bool preferWindowsPowerShell) ? preferWindowsPowerShell : true
+                    PreferWindowsPowerShell = context.GetFlagOrDefault<PreferWindowsPowerShellVariableFunction>(template.PreferWindowsPowerShell, true),
+                    TerminateHostProcess = context.GetFlagOrDefault<AutoTerminatePowerShellProcessVariableFunction>(defaultValue: true)
                 };
                 job.MessageLogged += (s, e) => {
                     if (e.Message.Contains("No match was found for the specified"))

@@ -11,6 +11,7 @@ using Inedo.Diagnostics;
 using Inedo.ExecutionEngine;
 using Inedo.Extensibility.Operations;
 using Inedo.Extensibility.RaftRepositories;
+using Inedo.Extensions.Scripting.Functions;
 
 namespace Inedo.Extensions.Scripting.PowerShell
 {
@@ -110,7 +111,8 @@ namespace Inedo.Extensions.Scripting.PowerShell
                 Parameters = parameters,
                 OutVariables = outArguments.Keys.ToArray(),
                 WorkingDirectory = context.WorkingDirectory,
-                PreferWindowsPowerShell = preferWindowsPowerShell
+                PreferWindowsPowerShell = preferWindowsPowerShell,
+                TerminateHostProcess = context.GetFlagOrDefault<AutoTerminatePowerShellProcessVariableFunction>(defaultValue: true)
             };
 
             job.MessageLogged += (s, e) => logger.Log(e.Level, e.Message);

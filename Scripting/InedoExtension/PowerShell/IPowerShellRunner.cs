@@ -18,6 +18,7 @@ namespace Inedo.Extensions.Scripting.PowerShell
         bool DebugLogging { get; set; }
         bool VerboseLogging { get; set; }
         bool PreferWindowsPowerShell { get; set; }
+        bool TerminateHostProcess { get; set; }
 
         Task<ExecutePowerShellJob.Result> ExecuteAsync(string script, Dictionary<string, RuntimeValue> variables, Dictionary<string, RuntimeValue> parameters, string[] outVariables, string workingDirectory, CancellationToken cancellationToken);
     }

@@ -47,7 +47,9 @@ public sealed class PSEvalVariableFunction : VariableFunction, IAsyncVariableFun
         {
             CollectOutput = true,
             ScriptText = this.ScriptText,
-            Variables = PowerShellScriptRunner.ExtractVariables(this.ScriptText, execContext)
+            Variables = PowerShellScriptRunner.ExtractVariables(this.ScriptText, execContext),
+            PreferWindowsPowerShell = execContext.GetFlagOrDefault<PreferWindowsPowerShellVariableFunction>(defaultValue: true),
+            TerminateHostProcess = execContext.GetFlagOrDefault<AutoTerminatePowerShellProcessVariableFunction>(defaultValue: true)
         };
 
         var jobExecuter = await execContext.Agent.GetServiceAsync<IRemoteJobExecuter>().ConfigureAwait(false);

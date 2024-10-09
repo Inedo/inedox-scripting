@@ -17,6 +17,7 @@ namespace Inedo.Extensions.Scripting.PowerShell
         public bool VerboseLogging { get; set; }
         public bool PreferWindowsPowerShell { get; set; }
         public bool LogOutput { get; set; }
+        public bool TerminateHostProcess { get; set; }
 
         public override void Serialize(Stream stream)
         {
@@ -25,6 +26,7 @@ namespace Inedo.Extensions.Scripting.PowerShell
             writer.Write(this.VerboseLogging);
             writer.Write(this.LogOutput);
             writer.Write(this.PreferWindowsPowerShell);
+            writer.Write(this.TerminateHostProcess);
         }
         public override void Deserialize(Stream stream)
         {
@@ -33,6 +35,7 @@ namespace Inedo.Extensions.Scripting.PowerShell
             this.VerboseLogging = reader.ReadBoolean();
             this.LogOutput = reader.ReadBoolean();
             this.PreferWindowsPowerShell = reader.ReadBoolean();
+            this.TerminateHostProcess = reader.ReadBoolean();
         }
 
         public override async Task<object> ExecuteAsync(CancellationToken cancellationToken)

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
@@ -16,14 +17,16 @@ using Microsoft.Win32;
 
 namespace Inedo.Extensions.Scripting.PowerShell
 {
-    internal class PowerShellScriptRunner : ILogger, IDisposable
+    internal sealed class PowerShellScriptRunner : ILogger, IDisposable
     {
         private const string OutVarPrefix = "!INEDO_VAR!";
+        private const string PowerShellProcessIdPrefix = "!INEDO_PS_PID!";
 
-        public static readonly LazyRegex TypeCastRegex = new(@"^\[type::(?<1>[^\]]+)\](?<2>.+)$", RegexOptions.Compiled | RegexOptions.ExplicitCapture);
+        private static readonly LazyRegex TypeCastRegex = new(@"^\[type::(?<1>[^\]]+)\](?<2>.+)$", RegexOptions.Compiled | RegexOptions.ExplicitCapture);
         private static readonly LazyRegex VariableRegex = new(@"(?>\$(?<1>[a-zA-Z0-9_]+)|\${(?<2>[^}]+)})", RegexOptions.Compiled | RegexOptions.ExplicitCapture);
         private readonly InedoPSHost pshost = new();
         private readonly Lazy<Runspace> runspaceFactory;
+        private readonly HashSet<int> hostProcessIds = [];
         private bool disposed;
 
         public PowerShellScriptRunner()
@@ -40,6 +43,7 @@ namespace Inedo.Extensions.Scripting.PowerShell
         public bool DebugLogging { get; set; }
         public bool VerboseLogging { get; set; }
         public bool PreferWindowsPowerShell { get; set; }
+        public bool TerminateHostProcess { get; set; }
 
         public static Dictionary<string, RuntimeValue> ExtractVariables(string script, IOperationExecutionContext context)
         {
@@ -208,19 +212,34 @@ namespace Inedo.Extensions.Scripting.PowerShell
                 (s, e) =>
                 {
                     var obj = output[e.Index];
-                    if (obj?.BaseObject is string value && value.StartsWith(OutVarPrefix) && value.Length > OutVarPrefix.Length)
+                    if (obj?.BaseObject is string value)
                     {
-                        var span = value.AsSpan(OutVarPrefix.Length);
-                        int varNameLength = span.IndexOf('!');
-                        if (varNameLength > 0)
+                        if (value.StartsWith(OutVarPrefix) && value.Length > OutVarPrefix.Length)
                         {
-                            var varName = span[0..varNameLength].ToString();
-                            var varValue = ParseJson(value.AsMemory(OutVarPrefix.Length + varNameLength + 1));
-                            lock (outVariables)
+                            var span = value.AsSpan(OutVarPrefix.Length);
+                            int varNameLength = span.IndexOf('!');
+                            if (varNameLength > 0)
                             {
-                                outVarsSet.Add(varName);
-                                outVariables[varName] = varValue;
+                                var varName = span[0..varNameLength].ToString();
+                                var varValue = ParseJson(value.AsMemory(OutVarPrefix.Length + varNameLength + 1));
+                                lock (outVariables)
+                                {
+                                    outVarsSet.Add(varName);
+                                    outVariables[varName] = varValue;
+                                }
                             }
+                        }
+                        else if (value.StartsWith(PowerShellProcessIdPrefix) && value.Length > PowerShellProcessIdPrefix.Length)
+                        {
+                            if (int.TryParse(value.AsSpan(PowerShellProcessIdPrefix.Length), out int pid))
+                            {
+                                lock (this.hostProcessIds)
+                                    this.hostProcessIds.Add(pid);
+                            }
+                        }
+                        else
+                        {
+                            this.OnOutputReceived(obj);
                         }
                     }
                     else
@@ -232,6 +251,12 @@ namespace Inedo.Extensions.Scripting.PowerShell
             powerShell.Streams.Progress.DataAdded += (s, e) => this.OnProgressUpdate(powerShell.Streams.Progress[e.Index]);
 
             powerShell.Streams.AttachLogging(this);
+
+            if (this.TerminateHostProcess)
+            {
+                powerShell.AddScript($"\"{PowerShellProcessIdPrefix}$PID\"");
+                powerShell.AddStatement();
+            }
 
             if (!string.IsNullOrWhiteSpace(workingDirectory))
             {
@@ -289,8 +314,36 @@ namespace Inedo.Extensions.Scripting.PowerShell
         {
             if (!this.disposed && this.runspaceFactory.IsValueCreated)
             {
-                this.runspaceFactory.Value.Close();
-                this.runspaceFactory.Value.Dispose();
+                try
+                {
+                    this.runspaceFactory.Value.Close();
+                    this.runspaceFactory.Value.Dispose();
+                }
+                catch
+                {
+                }
+
+                if (this.TerminateHostProcess)
+                {
+                    int myPid = Environment.ProcessId;
+
+                    foreach (int pid in this.hostProcessIds)
+                    {
+                        if (pid != myPid)
+                        {
+                            try
+                            {
+                                using var process = Process.GetProcessById(pid);
+                                process.Kill();
+                            }
+                            catch (Exception ex)
+                            {
+                                this.LogWarning($"Failed to terminate PowerShell process PID={pid}: {ex.Message}");
+                            }
+                        }
+                    }
+                }
+
                 this.disposed = true;
             }
         }

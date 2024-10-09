@@ -9,6 +9,7 @@ using Inedo.Extensibility;
 using Inedo.Extensibility.Configurations;
 using Inedo.Extensibility.Operations;
 using Inedo.Extensions.Scripting.Configurations.PsModule;
+using Inedo.Extensions.Scripting.Functions;
 using Inedo.Extensions.Scripting.PowerShell;
 
 namespace Inedo.Extensions.Scripting.Operations.PowerShell
@@ -27,23 +28,13 @@ namespace Inedo.Extensions.Scripting.Operations.PowerShell
             var jobRunner = await context.Agent.GetServiceAsync<IRemoteJobExecuter>();
             var scriptText = "$results = Get-Module -ListAvailable";
 
-            var preferWindowsPowerShell = bool.TrueString;
-            var maybeVariable = context.TryGetVariableValue(new RuntimeVariableName("PreferWindowsPowerShell", RuntimeValueType.Scalar));
-            if (maybeVariable == null)
-            {
-                var maybeFunc = context.TryGetFunctionValue("PreferWindowsPowerShell");
-                if (maybeFunc != null)
-                    preferWindowsPowerShell = maybeFunc.Value.AsString();
-            }
-            else
-                preferWindowsPowerShell = maybeVariable.Value.AsString();
-
             var job = new ExecutePowerShellJob
             {
                 CollectOutput = true,
-                OutVariables = new[] { "results" },
+                OutVariables = ["results"],
                 ScriptText = scriptText,
-                PreferWindowsPowerShell = bool.TryParse(preferWindowsPowerShell, out bool _preferWindowsPowerShell) ? _preferWindowsPowerShell : true
+                PreferWindowsPowerShell = context.GetFlagOrDefault<PreferWindowsPowerShellVariableFunction>(defaultValue: true),
+                TerminateHostProcess = context.GetFlagOrDefault<AutoTerminatePowerShellProcessVariableFunction>(defaultValue: true)
             };
 
             var result = (ExecutePowerShellJob.Result)await jobRunner.ExecuteJobAsync(job);

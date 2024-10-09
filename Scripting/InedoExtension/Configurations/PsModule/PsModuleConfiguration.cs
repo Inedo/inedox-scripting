@@ -10,6 +10,7 @@ using Inedo.ExecutionEngine;
 using Inedo.Extensibility;
 using Inedo.Extensibility.Configurations;
 using Inedo.Extensibility.Operations;
+using Inedo.Extensions.Scripting.Functions;
 using Inedo.Extensions.Scripting.PowerShell;
 using Inedo.Extensions.Scripting.PowerShell.Versions;
 using Inedo.Serialization;
@@ -258,22 +259,6 @@ namespace Inedo.Extensions.Scripting.Configurations.PsModule
                 variables.Add($"${property.Key}", property.Value);
             }
 
-
-            if (string.IsNullOrEmpty(template.PreferWindowsPowerShell))
-            {
-                var maybeVariable = context.TryGetVariableValue(new RuntimeVariableName("PreferWindowsPowerShell", RuntimeValueType.Scalar));
-                if (maybeVariable == null)
-                {
-                    var maybeFunc = context.TryGetFunctionValue("PreferWindowsPowerShell");
-                    if (maybeFunc == null)
-                        template.PreferWindowsPowerShell = bool.TrueString;
-                    else
-                        template.PreferWindowsPowerShell = maybeFunc.Value.AsString();
-                }
-                else
-                    template.PreferWindowsPowerShell = maybeVariable.Value.AsString();
-            }
-
             var job = new ExecutePowerShellJob
             {
                 CollectOutput = true,
@@ -282,7 +267,8 @@ namespace Inedo.Extensions.Scripting.Configurations.PsModule
                 LogOutput = template.Verbose,
                 ScriptText = scriptText,
                 Variables = variables,
-                PreferWindowsPowerShell = bool.TryParse(template.PreferWindowsPowerShell, out bool preferWindowsPowerShell) ? preferWindowsPowerShell : true
+                PreferWindowsPowerShell = context.GetFlagOrDefault<PreferWindowsPowerShellVariableFunction>(template.PreferWindowsPowerShell, true),
+                TerminateHostProcess = context.GetFlagOrDefault<AutoTerminatePowerShellProcessVariableFunction>(defaultValue: true)
             };
             
             log.LogDebug(job.ScriptText);
@@ -291,7 +277,7 @@ namespace Inedo.Extensions.Scripting.Configurations.PsModule
                 if (e.Message.Contains("Untrusted repository"))
                 {
                     log.Log(e.Level, e.Message);
-                    log.Log(MessageLevel.Error, "Repository is untrusted.  Set the repository to Trusted using \"Set-PSRepository\" or use the \"Force\" parameter.");
+                    log.Log(MessageLevel.Error, "Repository is untrusted. Set the repository to Trusted using \"Set-PSRepository\" or use the \"Force\" parameter.");
                 }
                 else if (e.Message.Contains("Are you sure you want to perform this action?"))
                 {
@@ -315,21 +301,6 @@ namespace Inedo.Extensions.Scripting.Configurations.PsModule
                 if (template.Verbose)
                     scriptText += " -Verbose";
 
-                if (string.IsNullOrEmpty(template.PreferWindowsPowerShell))
-                {
-                    var maybeVariable = context.TryGetVariableValue(new RuntimeVariableName("PreferWindowsPowerShell", RuntimeValueType.Scalar));
-                    if (maybeVariable == null)
-                    {
-                        var maybeFunc = context.TryGetFunctionValue("PreferWindowsPowerShell");
-                        if (maybeFunc == null)
-                            template.PreferWindowsPowerShell = bool.TrueString;
-                        else
-                            template.PreferWindowsPowerShell = maybeFunc.Value.AsString();
-                    }
-                    else
-                        template.PreferWindowsPowerShell = maybeVariable.Value.AsString();
-                }
-
                 var job = new ExecutePowerShellJob
                 {
                     CollectOutput = true,
@@ -342,7 +313,8 @@ namespace Inedo.Extensions.Scripting.Configurations.PsModule
                     {
                         ["Name"] = template.ModuleName
                     },
-                    PreferWindowsPowerShell = bool.TryParse(template.PreferWindowsPowerShell, out bool preferWindowsPowerShell) ? preferWindowsPowerShell : true
+                    PreferWindowsPowerShell = context.GetFlagOrDefault<PreferWindowsPowerShellVariableFunction>(template.PreferWindowsPowerShell, true),
+                    TerminateHostProcess = context.GetFlagOrDefault<AutoTerminatePowerShellProcessVariableFunction>(defaultValue: true)
                 };
                 log.LogDebug(job.ScriptText);
                 job.MessageLogged += (s, e) => {

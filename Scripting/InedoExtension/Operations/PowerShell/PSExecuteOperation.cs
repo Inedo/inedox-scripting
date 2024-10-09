@@ -1,14 +1,12 @@
 ﻿using System.ComponentModel;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Inedo.Agents;
 using Inedo.Diagnostics;
 using Inedo.Documentation;
-using Inedo.ExecutionEngine.Executer;
-using Inedo.ExecutionEngine;
 using Inedo.Extensibility;
 using Inedo.Extensibility.Operations;
+using Inedo.Extensions.Scripting.Functions;
 using Inedo.Extensions.Scripting.PowerShell;
 using Inedo.Web;
 
@@ -91,21 +89,6 @@ psexec >>
 
             var jobRunner = context.Agent.GetService<IRemoteJobExecuter>();
 
-            if (string.IsNullOrEmpty(this.PreferWindowsPowerShell))
-            {
-                var maybeVariable = context.TryGetVariableValue(new RuntimeVariableName("PreferWindowsPowerShell", RuntimeValueType.Scalar));
-                if (maybeVariable == null)
-                {
-                    var maybeFunc = context.TryGetFunctionValue("PreferWindowsPowerShell");
-                    if (maybeFunc == null)
-                        this.PreferWindowsPowerShell = bool.TrueString;
-                    else
-                        this.PreferWindowsPowerShell = maybeFunc.Value.AsString();
-                }
-                else
-                    this.PreferWindowsPowerShell = maybeVariable.Value.AsString();
-            }
-
             var job = new ExecutePowerShellJob
             {
                 ScriptText = this.ScriptText,
@@ -116,7 +99,8 @@ psexec >>
                 Variables = PowerShellScriptRunner.ExtractVariables(this.ScriptText, context),
                 Isolated = this.Isolated,
                 WorkingDirectory = context.WorkingDirectory,
-                PreferWindowsPowerShell = bool.TryParse(this.PreferWindowsPowerShell, out bool preferWindowsPowerShell) ? preferWindowsPowerShell : true
+                PreferWindowsPowerShell = context.GetFlagOrDefault<PreferWindowsPowerShellVariableFunction>(this.PreferWindowsPowerShell, true),
+                TerminateHostProcess = context.GetFlagOrDefault<AutoTerminatePowerShellProcessVariableFunction>(defaultValue: true)
             };
 
             job.MessageLogged += (s, e) => this.Log(e.Level, e.Message);

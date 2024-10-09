@@ -26,6 +26,7 @@ namespace Inedo.Extensions.Scripting.PowerShell
         public bool Isolated { get; set; }
         public string WorkingDirectory { get; set; }
         public bool PreferWindowsPowerShell { get; set; }
+        public bool TerminateHostProcess { get; set; }
 
         public override async Task<object> ExecuteAsync(CancellationToken cancellationToken)
         {
@@ -48,6 +49,7 @@ namespace Inedo.Extensions.Scripting.PowerShell
             writer.Write(this.Isolated);
             writer.Write(this.WorkingDirectory ?? string.Empty);
             writer.Write(this.PreferWindowsPowerShell);
+            writer.Write(this.TerminateHostProcess);
 
             WriteDictionary(writer, this.Variables);
             WriteDictionary(writer, this.Parameters);
@@ -67,6 +69,7 @@ namespace Inedo.Extensions.Scripting.PowerShell
             this.Isolated = reader.ReadBoolean();
             this.WorkingDirectory = reader.ReadString();
             this.PreferWindowsPowerShell = reader.ReadBoolean();
+            this.TerminateHostProcess = reader.ReadBoolean();
 
             this.Variables = ReadDictionary(reader);
             this.Parameters = ReadDictionary(reader);
@@ -226,6 +229,7 @@ namespace Inedo.Extensions.Scripting.PowerShell
             r.DebugLogging = this.DebugLogging;
             r.VerboseLogging = this.VerboseLogging;
             r.PreferWindowsPowerShell = this.PreferWindowsPowerShell;
+            r.TerminateHostProcess = this.TerminateHostProcess;
 
             return r;
         }
@@ -244,6 +248,7 @@ namespace Inedo.Extensions.Scripting.PowerShell
             public bool DebugLogging { get; set; }
             public bool VerboseLogging { get; set; }
             public bool PreferWindowsPowerShell { get; set; }
+            public bool TerminateHostProcess { get; set; }
 
             public event EventHandler<PowerShellOutputEventArgs> OutputReceived;
             public event EventHandler<LogMessageEventArgs> MessageLogged;
