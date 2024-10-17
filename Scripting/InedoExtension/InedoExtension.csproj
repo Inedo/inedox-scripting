@@ -2,7 +2,7 @@
   <PropertyGroup>
     <RootNamespace>Inedo.Extensions.Scripting</RootNamespace>
     <AssemblyName>Scripting</AssemblyName>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <LangVersion>latest</LangVersion>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -21,9 +21,9 @@
     <EmbeddedResource Include="ScriptLanguages\Shell\bash.svg" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Inedo.SDK" Version="2.4.0">
+    <PackageReference Include="Inedo.SDK" Version="3.1.0-ci.7">
       <ExcludeAssets>runtime</ExcludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.2.23" />
+    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.4.5" />
   </ItemGroup>
 </Project>
