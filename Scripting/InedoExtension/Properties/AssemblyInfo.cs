@@ -12,5 +12,5 @@ using Inedo.Extensibility;
 
 [assembly: ScriptNamespace("Scripting")]
 
-[assembly: AssemblyVersion("2.4.0")]
-[assembly: AssemblyFileVersion("2.4.0")]
+[assembly: AssemblyVersion("3.1.0")]
+[assembly: AssemblyFileVersion("3.1.0")]

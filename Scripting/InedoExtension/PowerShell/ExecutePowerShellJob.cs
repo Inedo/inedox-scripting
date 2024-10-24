@@ -55,7 +55,7 @@ namespace Inedo.Extensions.Scripting.PowerShell
             WriteDictionary(writer, this.Parameters);
 
             SlimBinaryFormatter.WriteLength(writer, this.OutVariables?.Length ?? 0);
-            foreach (var var in this.OutVariables ?? InedoLib.EmptyArray<string>())
+            foreach (var var in this.OutVariables ?? [])
                 writer.Write(var);
         }
         public override void Deserialize(Stream stream)
