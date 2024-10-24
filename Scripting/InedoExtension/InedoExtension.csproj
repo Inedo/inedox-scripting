@@ -21,9 +21,9 @@
     <EmbeddedResource Include="ScriptLanguages\Shell\bash.svg" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Inedo.SDK" Version="3.1.0-ci.7">
+    <PackageReference Include="Inedo.SDK" Version="3.1.0">
       <ExcludeAssets>runtime</ExcludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.4.5" />
+    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.4.6" />
   </ItemGroup>
 </Project>
