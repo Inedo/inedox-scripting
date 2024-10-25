@@ -437,6 +437,9 @@ namespace Inedo.Extensions.Scripting.PowerShell
         }
         private static RuntimeValue ParseJson(ReadOnlyMemory<char> json)
         {
+            if (json.IsEmpty)
+                return default;
+
             using var doc = JsonDocument.Parse(json);
             return convertElement(doc.RootElement);
 
