@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Inedo.Diagnostics;
@@ -90,6 +91,14 @@ PSCall2 hdars.ps1 (
                 preferWindowsPowerShell: bool.TryParse(this.PreferWindowsPowerShell, out bool preferWindowsPowerShell) ? preferWindowsPowerShell : true,
                 progressUpdateHandler: (s, e) => Interlocked.Exchange(ref this.currentProgress, e)
             );
+
+            //foreach (var v in result.OutVariables)
+            //{
+            //    if (this.Parameters.TryGetValue(v.Key, out var varName) && varName.ValueType == RuntimeValueType.Scalar)
+            //        context.SetVariableValue(varName.ToString(), v.Value);
+            //    else if (this.OutputVariables.Contains(v.Key))
+            //        context.SetVariableValue(v.Key, v.Value);
+            //}
         }
         public override OperationProgress GetProgress()
         {

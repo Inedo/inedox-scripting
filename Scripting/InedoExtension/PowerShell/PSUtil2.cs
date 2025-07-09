@@ -54,7 +54,7 @@ namespace Inedo.Extensions.Scripting.PowerShell
 
             var psVariables = new Dictionary<string, RuntimeValue>(StringComparer.OrdinalIgnoreCase);
             var psParameters = new Dictionary<string, RuntimeValue>(StringComparer.OrdinalIgnoreCase);
-            var psOutVariables = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var psOutVariables = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
             if (operation.Parameters != null)
             {
@@ -75,10 +75,11 @@ namespace Inedo.Extensions.Scripting.PowerShell
                         }
 
                         var paramValue = psParamInfo.IsBooleanOrSwitch ? (param.Value.AsBoolean() ?? false) : param.Value;
-                        psParameters.Add(param.Key, paramValue);
 
                         if (psParamInfo.IsOutput)
-                            psOutVariables.Add(param.Key);
+                            psOutVariables.Add(param.Key, paramValue.ToString());
+                        else
+                            psParameters.Add(param.Key, paramValue);
                     }
                 }
             }
@@ -88,11 +89,6 @@ namespace Inedo.Extensions.Scripting.PowerShell
                 if (scriptInfo?.ConfigParameters?.Count > 0)
                 {
                     var uniqueConfigKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                    void setOutputVariable(string oe)
-                    {
-                        if (oe?.StartsWith('$') == true)
-                            psOutVariables.Add(oe.TrimStart('$'));
-                    }
                     foreach (var configParam in scriptInfo.ConfigParameters)
                     {
                         var uniqueKey = $"{configParam.ConfigType},{configParam.ConfigKey}";
@@ -104,11 +100,18 @@ namespace Inedo.Extensions.Scripting.PowerShell
                             );
                             continue;
                         }
+
                         setOutputVariable(configParam.ConfigType);
                         setOutputVariable(configParam.ConfigKey);
                         setOutputVariable(configParam.DesiredValue);
                         setOutputVariable(configParam.CurrentValue);
                         setOutputVariable(configParam.ValueDrifted);
+                    }
+
+                    void setOutputVariable(string oe)
+                    {
+                        if (oe?.StartsWith('$') == true)
+                            psOutVariables.Add(oe.TrimStart('$'), oe.TrimStart('$'));
                     }
                 }
 
@@ -136,7 +139,7 @@ namespace Inedo.Extensions.Scripting.PowerShell
                 LogOutput = !collectOutput,
                 Variables = psVariables,
                 Parameters = psParameters,
-                OutVariables = psOutVariables.ToArray(),
+                OutVariables = [.. psOutVariables.Keys],
                 WorkingDirectory = context.WorkingDirectory,
                 PreferWindowsPowerShell = preferWindowsPowerShell,
                 TerminateHostProcess = context.GetFlagOrDefault<AutoTerminatePowerShellProcessVariableFunction>(defaultValue: true)
@@ -155,6 +158,14 @@ namespace Inedo.Extensions.Scripting.PowerShell
                 Output = result.Output,
                 OutVariables = result.OutVariables
             };
+
+            foreach (var var in result.OutVariables)
+            {
+                if (psOutVariables.TryGetValue(var.Key, out var varName))
+                    context.SetVariableValue(new RuntimeVariableName(varName, var.Value.ValueType), var.Value);
+                else if (operation.OutputVariables?.Contains(var.Key, StringComparer.OrdinalIgnoreCase) == true)
+                    context.SetVariableValue(new RuntimeVariableName(var.Key, var.Value.ValueType), var.Value);
+            }
 
             if (executionMode == PsExecutionMode.Collect || executionMode == PsExecutionMode.Configure)
             {
@@ -223,6 +234,7 @@ namespace Inedo.Extensions.Scripting.PowerShell
                         CurrentConfigValue = result.Output.FirstOrDefault()
                     });
                 }
+
                 data.Configuration = configInfos;
             }
 
