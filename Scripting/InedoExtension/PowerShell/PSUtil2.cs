@@ -84,6 +84,15 @@ namespace Inedo.Extensions.Scripting.PowerShell
                 }
             }
 
+            if (operation.OutputVariables != null)
+            {
+                foreach (var param in operation.OutputVariables)
+                { 
+                    if (!psOutVariables.ContainsKey(param))
+                        psOutVariables.Add(param, null);
+                } 
+            }
+
             if (executionMode == PsExecutionMode.Collect || executionMode == PsExecutionMode.Configure)
             {
                 if (scriptInfo?.ConfigParameters?.Count > 0)
