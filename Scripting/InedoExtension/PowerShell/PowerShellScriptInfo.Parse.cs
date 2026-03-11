@@ -11,10 +11,6 @@ namespace Inedo.Extensions.Scripting.PowerShell
 {
     partial class PowerShellScriptInfo
     {
-        private static readonly LazyRegex DocumentationRegex = new LazyRegex(@"\s*\.(?<1>\S+)[ \t]*(?<2>[^\r\n]+)?\s*\n(?<3>(.(?!\n\.))+)", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture);
-        private static readonly LazyRegex SpaceCollapseRegex = new LazyRegex(@"\s*\n\s*", RegexOptions.Compiled | RegexOptions.Singleline);
-        private static readonly LazyRegex ParameterTypeRegex = new LazyRegex(@"^\[?(?<1>[^\]]+)\]?$", RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.ExplicitCapture);
-
         public static bool TryParse(TextReader scriptText, out PowerShellScriptInfo info)
         {
             try
@@ -30,8 +26,7 @@ namespace Inedo.Extensions.Scripting.PowerShell
         }
         public static PowerShellScriptInfo Parse(TextReader scriptText)
         {
-            if (scriptText == null)
-                throw new ArgumentNullException(nameof(scriptText));
+            ArgumentNullException.ThrowIfNull(scriptText);
 
             var tokens = PSParser.Tokenize(scriptText.ReadToEnd(), out var errors);
 
@@ -43,8 +38,7 @@ namespace Inedo.Extensions.Scripting.PowerShell
 
             var documentationToken = tokens
                 .Take(paramIndex)
-                .Where(t => t.Type == PSTokenType.Comment && t.Content != null && t.Content.StartsWith("<#") && t.Content.EndsWith("#>"))
-                .LastOrDefault();
+                .LastOrDefault(t => t.Type == PSTokenType.Comment && t.Content != null && t.Content.StartsWith("<#") && t.Content.EndsWith("#>"));
 
             if (documentationToken != null)
             {
@@ -52,15 +46,14 @@ namespace Inedo.Extensions.Scripting.PowerShell
                 if (documentation.StartsWith("<#") && documentation.EndsWith("#>"))
                     documentation = documentation.Substring(2, documentation.Length - 4);
 
-                var docBlocks = DocumentationRegex
-                    .Value
+                var docBlocks = DocumentationRegex()
                     .Matches(documentation)
                     .Cast<Match>()
                     .Select(m => new
                     {
                         Name = m.Groups[1].Value,
                         Param = !string.IsNullOrWhiteSpace(m.Groups[2].Value) ? m.Groups[2].Value.Trim() : null,
-                        Content = !string.IsNullOrWhiteSpace(m.Groups[3].Value) ? SpaceCollapseRegex.Value.Replace(m.Groups[3].Value.Trim(), " ") : null
+                        Content = !string.IsNullOrWhiteSpace(m.Groups[3].Value) ? SpaceCollapseRegex().Replace(m.Groups[3].Value.Trim(), " ") : null
                     })
                     .Where(d => d.Content != null)
                     .ToLookup(
@@ -232,9 +225,10 @@ namespace Inedo.Extensions.Scripting.PowerShell
 
                     continue;
                 }
+
                 if (token.Type == PSTokenType.Type)
                 {
-                    var match = ParameterTypeRegex.Value.Match(token.Content ?? string.Empty);
+                    var match = ParameterTypeRegex().Match(token.Content ?? string.Empty);
                     if (match.Success)
                         currentParam.Type = match.Groups[1].Value;
                 }
@@ -278,10 +272,18 @@ namespace Inedo.Extensions.Scripting.PowerShell
             public override string ToString()
             {
                 if (this.Type != null)
-                    return "[" + this.Type + "] " + this.Name;
+                    return $"[{this.Type}] {this.Name}";
                 else
                     return this.Name;
             }
         }
+
+        [GeneratedRegex(@"\s*\.(?<1>\S+)[ \t]*(?<2>[^\r\n]+)?\s*\n(?<3>(.(?!\n\.))+)", RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture | RegexOptions.Compiled | RegexOptions.CultureInvariant)]
+        private static partial Regex DocumentationRegex();
+        [GeneratedRegex(@"\s*\n\s*", RegexOptions.Compiled | RegexOptions.Singleline)]
+        private static partial Regex SpaceCollapseRegex();
+        [GeneratedRegex(@"^\[?(?<1>[^\]]+)\]?$", RegexOptions.ExplicitCapture | RegexOptions.Compiled | RegexOptions.Singleline)]
+        private static partial Regex ParameterTypeRegex();
+
     }
 }
