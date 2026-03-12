@@ -264,16 +264,7 @@ internal sealed partial class PowerShellScriptRunner : ILogger, IDisposable
             powerShell.AddStatement();
         }
 
-        powerShell.AddScript($$"""
-            function Invoke-InedoPSScript {
-                [CmdletBinding()]
-                {{script}}
-            }
-            """
-        );
-        powerShell.AddStatement();
-
-        powerShell.AddCommand("Invoke-InedoPSScript");
+        powerShell.AddScript(script);
 
         foreach (var p in parameters)
         {
